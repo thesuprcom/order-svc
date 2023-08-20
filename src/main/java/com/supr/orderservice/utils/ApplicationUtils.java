@@ -1,0 +1,91 @@
+package com.supr.orderservice.utils;
+
+import com.google.common.collect.ImmutableList;
+import com.supr.orderservice.enums.ExternalStatus;
+import com.supr.orderservice.enums.OrderItemStatus;
+import com.supr.orderservice.model.UserDetails;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import org.apache.logging.log4j.util.Strings;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Set;
+
+import static com.supr.orderservice.enums.OrderItemStatus.CANCELLED;
+import static com.supr.orderservice.enums.OrderItemStatus.CANCELLED_BY_SELLER;
+import static com.supr.orderservice.enums.OrderItemStatus.DELIVERED;
+import static com.supr.orderservice.enums.OrderItemStatus.FAILED;
+import static com.supr.orderservice.enums.OrderItemStatus.RTO_CREATED;
+
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class ApplicationUtils {
+    private static final Random random = new Random();
+    private static final OrderItemStatus[] completedInternalStatus =
+            new OrderItemStatus[]{CANCELLED, CANCELLED_BY_SELLER, DELIVERED, FAILED};
+    private static final OrderItemStatus[] accountingStatus =
+            new OrderItemStatus[]{CANCELLED, CANCELLED_BY_SELLER, DELIVERED};
+
+    public static final List<OrderItemStatus> NEW_USER_FOR_COUPON_ORDER_STATUSES =
+            ImmutableList.of(OrderItemStatus.CREATED, FAILED, CANCELLED_BY_SELLER,
+                    RTO_CREATED);
+
+    public static List<ExternalStatus> getSellerPortalExternalStatus() {
+        return Arrays
+                .asList(ExternalStatus.PLACED, ExternalStatus.PROCESSING_ON_HOLD, ExternalStatus.SHIPPED,
+                        ExternalStatus.DELIVERED, ExternalStatus.CANCELLED, ExternalStatus.PARTIALLY_DELIVERED,
+                        ExternalStatus.UNDELIVERED, ExternalStatus.PARTIALLY_SHIPPED,
+                        ExternalStatus.CANCELLED_BY_SELLER, ExternalStatus.CANCELLED,
+                        ExternalStatus.RETURN_REQUESTED, ExternalStatus.FORCE_REFUND);
+    }
+
+    public static List<ExternalStatus> getOrderCancellationExternalStatus() {
+        return Arrays
+                .asList(ExternalStatus.PLACED, ExternalStatus.PROCESSING_ON_HOLD,
+                        ExternalStatus.CANCELLED, ExternalStatus.CONFIRMED);
+    }
+
+    public static List<ExternalStatus> getUserOrderHistoryExternalStatus() {
+        return Arrays.asList(ExternalStatus.CREATED, ExternalStatus.PLACED, ExternalStatus.GIFT_SWAPPED);
+    }
+
+    public static BigDecimal roundUpToThreeDecimalPlaces(BigDecimal value) {
+        return value.setScale(3, RoundingMode.HALF_UP);
+    }
+
+    public static BigDecimal roundUpToTwoDecimalPlaces(BigDecimal value) {
+        return value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    public static String generateOrderId() {
+        return String.join("", "SUPR", Long.toString(System.currentTimeMillis(), 36),
+                Integer.toString(random.nextInt(1260) + 36, 36)).toUpperCase();
+    }
+
+    public static String generateTransactionId() {
+        return String.join("", "TX", Long.toString(System.currentTimeMillis(), 36),
+                Integer.toString(random.nextInt(1260) + 36, 36)).toUpperCase();
+    }
+
+    private static final Set<OrderItemStatus> completedInternalStatuses =
+            new HashSet<>(Arrays.asList(completedInternalStatus));
+
+    public static boolean isInternalStatusCompleted(OrderItemStatus orderItemStatus) {
+        return completedInternalStatuses.contains(orderItemStatus);
+    }
+
+    private static final Set<OrderItemStatus> accountingStatuses =
+            new HashSet<>(Arrays.asList(accountingStatus));
+
+    public static boolean isAccountingStatus(OrderItemStatus orderItemStatus) {
+        return accountingStatuses.contains(orderItemStatus);
+    }
+
+    public static String fetchFullName(UserDetails userDetail) {
+        return Strings.join(Arrays.asList(userDetail.getFirstName(), userDetail.getLastName()), ' ');
+    }
+}
