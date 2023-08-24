@@ -10,12 +10,15 @@ import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.GreetingCard;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.ItemPrice;
+import com.supr.orderservice.model.Misc;
 import com.supr.orderservice.model.OrderPrice;
+import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.ViewGiftItem;
 import com.supr.orderservice.model.response.AcceptGiftResponse;
 import com.supr.orderservice.model.response.FetchGreetingResponse;
 import com.supr.orderservice.model.response.GiftSwapOptionsResponse;
 import com.supr.orderservice.model.response.ItemDetailResponse;
+import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.ReceiverPlaceOrderResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
 import com.supr.orderservice.model.response.SwapGiftResponse;
@@ -235,50 +238,32 @@ public class OrderUtils {
         }
     }
 
-    public static List<OrderItemEntity> validateStock(List<SellerSkuResponse> sellerSkuResponses,
+    public static List<OrderItemEntity> validateStock(ProductDataResponse productDataResponse,
                                                       List<OrderItemEntity> orderItemEntities) {
         List<OrderItemEntity> orderItemEntityList = new ArrayList<>();
         Map<String, OrderItemEntity> orderItemEntityMap =
                 orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getPskuCode, Function.identity()));
-        Optional<SellerSkuResponse> sellerSkuResponseOptional =
-                sellerSkuResponses.stream().filter(sellerSkuResponse -> sellerSkuResponse.getOffers().isInventoryTrack() &&
-                        orderItemEntityMap.get(sellerSkuResponse.getSku()).getOrderItemQuantity().intValue() >
-                                sellerSkuResponse.getOffers().getStock()).findFirst();
-        if (sellerSkuResponseOptional.isPresent()) {
-            orderItemEntityList.add(orderItemEntityMap.get(sellerSkuResponseOptional.get().getSku()));
+        Optional<Product> productOptional =
+                productDataResponse.getProducts().entrySet().stream().filter(entry -> entry.getValue().isInventoryTrack() &&
+                                entry.getValue().getStock() >= orderItemEntityMap.get(entry.getKey()).getOrderItemQuantity().intValue())
+                        .map(Map.Entry::getValue)
+                        .findFirst();
+        if (productOptional.isPresent()) {
+            orderItemEntityList.add(orderItemEntityMap.get(productOptional.get().getSku()));
             throw new OrderServiceException("Stock not available for item");
         }
         return orderItemEntityList;
     }
 
-    public static List<OrderItemEntity> updatePriceFromCatalog(List<SellerSkuResponse> sellerSkuResponses,
-                                                               List<ItemInfo> orderItemEntities) {
-        List<OrderItemEntity> orderItemEntityList;
-        Map<String, ItemInfo> orderItemEntityMap =
-                orderItemEntities.stream().collect(Collectors.toMap(ItemInfo::getPskuCode, Function.identity()));
-        orderItemEntityList = sellerSkuResponses.stream().map(sellerSkuResponse -> {
-            OrderItemEntity orderItem = new OrderItemEntity();
-            ItemInfo itemInfo = orderItemEntityMap.get(sellerSkuResponse.getOffers().getPskuCode());
-            orderItem = objectMapper.convertValue(itemInfo,OrderItemEntity.class);
-            orderItem.setTotalPrice(sellerSkuResponse.getOffers().getMisc().getSalePrice().setScale(2, RoundingMode.HALF_UP));
-            OrderPrice itemPrice = fetchOrderItemPrice(orderItem.getPrice(), sellerSkuResponse.getOffers().getMisc());
-            orderItem.setPrice(itemPrice);
-            orderItem.setStatus(OrderItemStatus.ANOTHER_VARIANT);
-            return orderItem;
-        }).collect(Collectors.toList());
-        return orderItemEntityList;
-
-    }
-
-    public static List<OrderItemEntity> updatePriceFromCatalogService(List<SellerSkuResponse> sellerSkuResponses,
-                                                               List<OrderItemEntity> orderItemEntities) {
+    public static List<OrderItemEntity> updatePriceFromCatalogService(ProductDataResponse productDataResponse,
+                                                                      List<OrderItemEntity> orderItemEntities) {
         List<OrderItemEntity> orderItemEntityList;
         Map<String, OrderItemEntity> orderItemEntityMap =
                 orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getPskuCode, Function.identity()));
-        orderItemEntityList = sellerSkuResponses.stream().map(sellerSkuResponse -> {
-            OrderItemEntity orderItem = orderItemEntityMap.get(sellerSkuResponse.getOffers().getPskuCode());
-            orderItem.setTotalPrice(sellerSkuResponse.getOffers().getMisc().getSalePrice().setScale(2, RoundingMode.HALF_UP));
-            OrderPrice itemPrice = fetchOrderItemPrice(orderItem.getPrice(), sellerSkuResponse.getOffers().getMisc());
+        orderItemEntityList = productDataResponse.getProducts().entrySet().stream().map(entry -> {
+            OrderItemEntity orderItem = orderItemEntityMap.get(entry.getValue().getPskuCode());
+            orderItem.setTotalPrice(entry.getValue().getMisc().getSalePrice().setScale(2, RoundingMode.HALF_UP));
+            OrderPrice itemPrice = fetchOrderItemPrice(orderItem.getPrice(), entry.getValue().getMisc());
             orderItem.setPrice(itemPrice);
             return orderItem;
         }).collect(Collectors.toList());
@@ -286,11 +271,11 @@ public class OrderUtils {
 
     }
 
-    private static OrderPrice fetchOrderItemPrice(OrderPrice price, ItemPrice itemPrice) {
-        price.setTotalPrice(itemPrice.getSalePrice().setScale(2, RoundingMode.HALF_UP));
-        price.setTotalVat(itemPrice.getVatRate().setScale(2, RoundingMode.HALF_UP));
-        price.setTotalPrice(itemPrice.getSalePrice().setScale(2, RoundingMode.HALF_UP));
-        price.setTotalShipping(itemPrice.getShippingChargeExVat().setScale(2, RoundingMode.HALF_UP));
+    private static OrderPrice fetchOrderItemPrice(OrderPrice price, Misc misc) {
+        price.setTotalPrice(misc.getSalePrice().setScale(2, RoundingMode.HALF_UP));
+        price.setTotalVat(misc.getVatRate().setScale(2, RoundingMode.HALF_UP));
+        price.setTotalPrice(misc.getSalePrice().setScale(2, RoundingMode.HALF_UP));
+        price.setTotalShipping(misc.getShippingChargeExVat().setScale(2, RoundingMode.HALF_UP));
         return price;
     }
 }

@@ -34,6 +34,7 @@ import com.supr.orderservice.model.response.GiftSwapOptionsResponse;
 import com.supr.orderservice.model.response.ItemDetailResponse;
 import com.supr.orderservice.model.response.OpenGreetingResponse;
 import com.supr.orderservice.model.response.PaymentProcessingResponse;
+import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.ReceiverPlaceOrderResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
 import com.supr.orderservice.model.response.SwapGiftResponse;
@@ -291,10 +292,10 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     public GiftConfirmResponse confirmGift(String orderId, GiftConfirmRequest request) {
         OrderEntity orderEntity = fetchSenderOrderDetail(orderId);
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
-        checkItemDetailsRequest.setGiftItems(request.getGiftItems());
-        List<SellerSkuResponse> sellerSkuResponses = getSellerSkuResponse(orderId, orderEntity,
+        checkItemDetailsRequest.setSkus(request.getGiftItems().stream().map(ItemInfo::getPskuCode).collect(Collectors.toList()));
+        ProductDataResponse productDataResponse = getSellerSkuResponse(orderId, orderEntity,
                 checkItemDetailsRequest);
-        List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(sellerSkuResponses,
+        List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse,
                 orderEntity.getOrderItemEntities());
         if (outOfStockItems.size() > 0) {
             return GiftConfirmResponse.builder().orderId(orderId).outOfStockItems(outOfStockItems)
@@ -303,16 +304,16 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         if (!request.isGiftSwapped()) {
             return GiftConfirmResponse.builder().orderId(orderId).isOutOfStock(false).build();
         } else {
-            processItemVariantChanges(request, orderEntity, sellerSkuResponses);
+            processItemVariantChanges(request, orderEntity, productDataResponse);
             return GiftConfirmResponse.builder().orderId(orderId).isOutOfStock(false).build();
         }
 
     }
 
     private void processItemVariantChanges(GiftConfirmRequest request, OrderEntity orderEntity,
-                                           List<SellerSkuResponse> sellerSkuResponses) {
-        List<OrderItemEntity> availableOrderItem = OrderUtils.updatePriceFromCatalog(sellerSkuResponses,
-                request.getGiftItems());
+                                           ProductDataResponse productDataResponse) {
+        List<OrderItemEntity> availableOrderItem = OrderUtils.updatePriceFromCatalogService(productDataResponse,
+                orderEntity.getOrderItemEntities());
         OrderPrice orderPrice = reCalculatePrice(availableOrderItem);
         int isOrderPriceChanged = orderEntity.getPrice().getTotalPrice().compareTo(orderPrice.getTotalPrice());
         if (isOrderPriceChanged == 0) {
@@ -417,17 +418,17 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         orderService.save(orderEntity);
     }
 
-    private List<SellerSkuResponse> getSellerSkuResponse(String orderId, OrderEntity orderEntity,
+    private ProductDataResponse getSellerSkuResponse(String orderId, OrderEntity orderEntity,
                                                          CheckItemDetailsRequest checkItemDetailsRequest) {
-        List<SellerSkuResponse> sellerSkuResponses = new ArrayList<>();
+        ProductDataResponse productDataResponse;
         try {
-            sellerSkuResponses = inventoryServiceClient.fetchSellerSkuDetails(orderEntity.getCountryCode(), checkItemDetailsRequest);
+            productDataResponse = inventoryServiceClient.fetchSellerSkuDetails(orderEntity.getCountryCode(), checkItemDetailsRequest);
         } catch (Exception exception) {
             log.error("Error while calling the catalog service to fetch teh item price info for orderId: {}, " +
                     "exception: {}", orderId, exception);
             throw new OrderServiceException("Unable to call catalog service");
         }
-        return sellerSkuResponses;
+        return productDataResponse;
     }
 
 }

@@ -30,6 +30,7 @@ import com.supr.orderservice.model.request.ProcessPaymentRequest;
 import com.supr.orderservice.model.request.PurchaseOrderRequest;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
 import com.supr.orderservice.model.response.PaymentProcessingResponse;
+import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.PurchaseOrderResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
 import com.supr.orderservice.repository.CardDetailsRepository;
@@ -57,6 +58,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.supr.orderservice.enums.CouponInventoryUpdateType.USER_LEVEL_AND_COUPON_LEVEL;
 import static com.supr.orderservice.utils.Constants.COUPON_DISCOUNT_IS_NOT_APPLICABLE_ON_THIS_PAYMENT_METHOD;
@@ -201,8 +203,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         final UserCartDTO userCartDTO = request.getUserCartDTO();
         List<ItemInfo> items = userCartDTO.getItems();
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
-        checkItemDetailsRequest.setGiftItems(items);
-        List<SellerSkuResponse> sellerSkuResponses =
+        checkItemDetailsRequest.setSkus(items.stream().map(ItemInfo::getPskuCode).collect(Collectors.toList()));
+        ProductDataResponse productDataResponse =
                 inventoryServiceClient.fetchSellerSkuDetails(order.getCountryCode(), checkItemDetailsRequest);
         for (ItemInfo cartInfo : items) {
             OrderItemEntity orderItem = new OrderItemEntity();
@@ -236,11 +238,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setCouponDetails(userCartDTO.getCouponDetails());
             orderItems.add(orderItem);
         }
-        List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(sellerSkuResponses, orderItems);
+        List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse, orderItems);
         if (outOfStockItems.size() > 0) {
             throw new OrderServiceException("Few items in the cart are OUT_OF_STOCK");
         }
-        return OrderUtils.updatePriceFromCatalogService(sellerSkuResponses, orderItems);
+        return OrderUtils.updatePriceFromCatalogService(productDataResponse, orderItems);
     }
 
     private void deleteAllExistingOrderItems(final Long orderId) {

@@ -4,6 +4,7 @@ import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
 import com.supr.orderservice.model.request.UpdateItemStatusRequest;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
+import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +40,7 @@ public interface InventoryServiceClient {
                                           @RequestParam(value = "size", defaultValue = "20") int size);
 
     @PostMapping("/api/v1/{country-code}/product/check-stock/")
-    List<SellerSkuResponse> fetchSellerSkuDetails(@PathVariable(name = "country-code") String countryCode,
-                                                  @RequestBody CheckItemDetailsRequest checkItemDetailsRequest);
+    ProductDataResponse fetchSellerSkuDetails(@PathVariable(name = "country-code") String countryCode,
+                                              @RequestBody CheckItemDetailsRequest checkItemDetailsRequest);
 
 }
