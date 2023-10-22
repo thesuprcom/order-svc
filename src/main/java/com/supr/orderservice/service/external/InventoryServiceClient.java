@@ -19,7 +19,7 @@ import java.util.List;
 
 import static com.supr.orderservice.utils.Constants.STORE_ID_HEADER;
 
-@FeignClient(name = "store-catalog-write-service", url = "${inventory.base-url}")
+@FeignClient(name = "store-catalog-write-service", url = "${catalog.base-url}")
 public interface InventoryServiceClient {
 
 
