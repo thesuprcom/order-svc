@@ -146,7 +146,7 @@ public class OrderServiceImpl implements OrderService {
                                     .orderDate(orderItem.getOrder().getOrderPlacedTime())
                                     .nnOrderId(orderItem.getOrder().getId())
                                     .cancellationReason(orderItem.getCancellationReason())
-                                    .itemInfo(null != orderItem.getItemInfo() ? orderItem.getItemInfo().getProductTitle() : null)
+                                    .itemInfo(null != orderItem.getItemInfo() ? orderItem.getItemInfo().getGiftTitle() : null)
                                     .couponIssuerType(CouponUtility.getCouponIssuerType(orderItem))
                                     .couponType(CouponUtility.getCouponType(orderItem.getCouponDetails()))
                                     .deliveryType(order.getDeliveryType())

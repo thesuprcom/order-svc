@@ -13,6 +13,7 @@ import com.supr.orderservice.model.SellerInfo;
 import com.supr.orderservice.model.Shipping;
 import com.supr.orderservice.model.TrackingInfo;
 import com.supr.orderservice.model.UserDetails;
+import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.utils.CardDetailsUtility;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -98,10 +99,10 @@ public class OrderEntity extends OrderBaseEntity {
     private Shipping shipping;
     @Type(type = "json")
     @Column(columnDefinition = "json")
-    private UserDetails sender;
+    private UserInfo sender;
     @Type(type = "json")
     @Column(columnDefinition = "json")
-    private UserDetails receiver;
+    private UserInfo receiver;
     @Type(type = "json")
     @Column(name = "shipping_address", columnDefinition = "json")
     private Address shippingAddress;

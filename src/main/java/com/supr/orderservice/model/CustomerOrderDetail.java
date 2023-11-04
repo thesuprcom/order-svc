@@ -32,7 +32,7 @@ public class CustomerOrderDetail implements Serializable {
         response.setOrderPrice(order.getPrice());
         response.setStatus(order.getExternalStatus().name());
         response.setOrderPlacedDate(order.createdAt.toString());
-        response.setReceiverName(order.getReceiver().getName());
+        response.setReceiverName(order.getReceiver().getFirstName()+" "+order.getReceiver().getLastName());
         response.setGreetingCard(OrderUtils.fetchGreetingCard(order.getGreetingCard()));
         response.setInvoiceLink(order.getInvoiceDocumentId());
         response.setShippingAddress(order.getShippingAddress());

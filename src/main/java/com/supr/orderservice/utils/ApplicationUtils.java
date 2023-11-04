@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.enums.OrderItemStatus;
 import com.supr.orderservice.model.UserDetails;
+import com.supr.orderservice.model.UserInfo;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.logging.log4j.util.Strings;
@@ -85,7 +86,7 @@ public class ApplicationUtils {
         return accountingStatuses.contains(orderItemStatus);
     }
 
-    public static String fetchFullName(UserDetails userDetail) {
+    public static String fetchFullName(UserInfo userDetail) {
         return Strings.join(Arrays.asList(userDetail.getFirstName(), userDetail.getLastName()), ' ');
     }
 }

@@ -4,6 +4,7 @@ import com.supr.orderservice.entity.OrderEntity;
 import com.supr.orderservice.enums.WalletOperation;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.UserDetails;
+import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.request.WalletCreateRequest;
 import com.supr.orderservice.model.request.WalletUpdateRequest;
 import com.supr.orderservice.model.response.WalletResponse;
@@ -21,7 +22,7 @@ public class WalletServiceImpl implements WalletService {
     private final WalletServiceClient walletServiceClient;
 
     @Override
-    public WalletResponse processRefund(UserDetails userDetails, BigDecimal refundAmount, OrderEntity orderEntity) {
+    public WalletResponse processRefund(UserInfo userDetails, BigDecimal refundAmount, OrderEntity orderEntity) {
         WalletResponse walletResponse;
         try {
             walletResponse = walletServiceClient.fetchWalletDetails(userDetails.getUserId());
@@ -52,7 +53,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    public WalletResponse processRedeemtion(UserDetails userDetails, BigDecimal redeemAmount, OrderEntity orderEntity) {
+    public WalletResponse processRedeemtion(UserInfo userDetails, BigDecimal redeemAmount, OrderEntity orderEntity) {
         WalletResponse walletResponse;
         try {
             walletResponse = walletServiceClient.fetchWalletDetails(userDetails.getUserId());

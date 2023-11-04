@@ -24,7 +24,7 @@ public class PortalOrderDetail {
     private List<ItemInfo> itemInfos;
     private OrderPrice orderPrice;
     private String customer;
-    private UserDetails customerInfo;
+    private UserInfo customerInfo;
     private Address shippingAddress;
     private Address billingAddress;
     private String status;
@@ -43,7 +43,7 @@ public class PortalOrderDetail {
         this.totalAmount = order.getTotalAmount().toString();
         this.itemInfos = fetchItemInfos(order.getOrderItemEntities());
         this.orderPrice = order.getPrice();
-        this.customer = order.getSender().getName();
+        this.customer = order.getSender().getFirstName() +" "+ order.getSender().getLastName();
         this.customerInfo = order.getSender();
         this.shippingAddress = order.getShippingAddress();
         this.billingAddress = order.getBillingAddress();

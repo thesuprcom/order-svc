@@ -120,33 +120,37 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private OrderEntity createOrderEntity(PurchaseOrderRequest request) {
         OrderEntity order = createOrder(request.getOrderId());
         order.setStatus(OrderItemStatus.ANY);
-        stateMachineManager.moveToNextState(order, StateMachineType.SENDER.name(),
-                OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
+
         UserCartDTO userCartDTO = request.getUserCartDTO();
         order.setBrandId(request.getBrandId());
         order.setInvitationLink(request.getReceiverInvitationLink());
         order.setReceiverEmail(request.getReceiverEmail());
         order.setReceiverPhone(request.getReceiverPhone());
-        order.setReceiver(request.getUserCartDTO().getReceiver());
-        order.setShippingAddress(request.getUserCartDTO().getShippingAddress());
+        order.setReceiver(userCartDTO.getReceiver());
+        order.setShippingAddress(request.getUserCartDTO().getReceiverAddress());
         order.setBillingAddress(request.getBillingAddress());
-        order.setPaymentMode(PaymentMode.valueOf(request.getPaymentMode()));
+        order.setPaymentMode(PaymentMode.Card);
         order.setCountryCode(request.getCountryCode());
         order.setCurrencyCode(request.getCurrencyCode());
         order.setGiftSentOption(GiftSentOption.valueOf(request.getGiftSentOption()));
-        OrderPrice orderPrice = userCartDTO.getPriceDetails();
+        OrderPrice orderPrice = fetchOrderPrice(request);
         order.setTotalAmount(ApplicationUtils.roundUpToTwoDecimalPlaces(getPayableAmount(orderPrice)));
         order.setPrice(orderPrice);
-        order.setSellerId(userCartDTO.getStoreId());
-        order.setShippingAddress(userCartDTO.getShippingAddress());
-        order.setUserId(request.getSenderDetails().getUserId());
+        order.setSellerId(userCartDTO.getSellerInfo().getStoreId());
+        order.setUserId(userCartDTO.getUserId());
         order.setSellerInfo(request.getSellerInfo());
-        order.setSender(request.getSenderDetails());
+        order.setSender(userCartDTO.getSender());
         order.setIpAddress(request.getIpAddress());
         order.setCouponDetails(userCartDTO.getCouponDetails());
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         order.setOrderType(OrderType.SENDER);
+        stateMachineManager.moveToNextState(order, StateMachineType.SENDER.name(),
+                OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
         return order;
+    }
+
+    private OrderPrice fetchOrderPrice(PurchaseOrderRequest request) {
+        return new OrderPrice();
     }
 
     private OrderEntity createOrder(String orderId) {
@@ -201,9 +205,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         List<OrderItemEntity> orderItems = new ArrayList<>();
         int suffix = 1;
         final UserCartDTO userCartDTO = request.getUserCartDTO();
-        List<ItemInfo> items = userCartDTO.getItems();
+        List<ItemInfo> items = userCartDTO.getGiftItems();
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
-        checkItemDetailsRequest.setSkus(items.stream().map(ItemInfo::getPskuCode).collect(Collectors.toList()));
+        checkItemDetailsRequest.setSkus(items.stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
         ProductDataResponse productDataResponse =
                 inventoryServiceClient.fetchSellerSkuDetails(order.getCountryCode(), checkItemDetailsRequest);
         for (ItemInfo cartInfo : items) {
@@ -212,29 +216,22 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setCountryCode(request.getCountryCode());
             orderItem.setStatus(OrderItemStatus.CREATED);
             orderItem.setOrderItemId(order.getOrderId() + "-" + String.format("%03d", suffix++));
-            orderItem.setPskuCode(cartInfo.getPskuCode());
+            orderItem.setPskuCode(cartInfo.getPsku());
             orderItem.setItemInfo(cartInfo);
-            orderItem.setStoreId(userCartDTO.getStoreId());
+            orderItem.setSellerId(userCartDTO.getSellerInfo().getStoreId());
             orderItem.setPrice(cartInfo.getItemPriceDetails());
             orderItem.setOrderItemQuantity(cartInfo.getQuantity());
             orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
-            orderItem.setSellerId(request.getUserCartDTO().getStoreId());
+            orderItem.setBrandId(request.getUserCartDTO().getSellerInfo().getBrandId());
             orderItem.setBrandId(order.getBrandId());
-            orderItem.setProductId(cartInfo.getProductId());
-            orderItem.setParentProductId(cartInfo.getParentProductId());
-            orderItem.setWarranty(cartInfo.getWarranty());
-            orderItem.setPartnerSku(cartInfo.getPartnerSku());
-            orderItem.setProductTitle(cartInfo.getProductTitle());
-            orderItem.setProductColour(cartInfo.getProductColour());
-            orderItem.setProductFullTitle(cartInfo.getProductFullTitle());
-            orderItem.setProductBrand(cartInfo.getProductBrand());
-            orderItem.setProductFamily(cartInfo.getProductFamily());
-            orderItem.setProductSubtype(cartInfo.getProductSubtype());
-            orderItem.setProductType(cartInfo.getProductType());
-            orderItem.setImages(cartInfo.getImages());
-            orderItem.setParentSku(cartInfo.getParentSku());
+            orderItem.setProductId(cartInfo.getSkus());
+            orderItem.setProductTitle(cartInfo.getGiftTitle());
+            orderItem.setProductBrand(cartInfo.getBrandCode());
+            orderItem.setProductFamily(cartInfo.getBrandName());
+            orderItem.setImages(cartInfo.getGiftImages());
+            orderItem.setParentSku(cartInfo.getPsku());
             orderItem.setPrice(cartInfo.getItemPriceDetails());
-            orderItem.setTotalPrice(cartInfo.getTotalAmount());
+            orderItem.setTotalPrice(cartInfo.getItemPriceDetails().getTotalPrice());
             orderItem.setCouponDetails(userCartDTO.getCouponDetails());
             orderItems.add(orderItem);
         }

@@ -48,7 +48,7 @@ public class OrderInventoryManagementServiceImpl implements OrderInventoryManage
     request.setOperationValue(orderItemVO.getOrderItemQuantity());
     request.setIsSlottedQuantityUpdate(isSlottedQuantityUpdate);
     try {
-      inventoryServiceClient.updateQuantity(orderItemVO.getStoreId(), request);
+      inventoryServiceClient.updateQuantity(orderItemVO.getPskuCode(), request);
     } catch (Exception e) {
       log.error("Error updating item quantity with request {}", request, e);
     }
@@ -63,7 +63,7 @@ public class OrderInventoryManagementServiceImpl implements OrderInventoryManage
         .source(Constants.ORDER_SERVICE)
         .build();
     try {
-      inventoryServiceClient.updateStoreItemStatus(orderItemVO.getStoreId(), request);
+      inventoryServiceClient.updateStoreItemStatus(orderItemVO.getSellerId(), request);
     } catch (Exception e) {
       log.error("Error updating item status with request {}", request, e);
     }

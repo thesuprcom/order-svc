@@ -21,7 +21,7 @@ import javax.validation.Valid;
 
 
 @RestController
-@RequestMapping("/api/v1/sender")
+@RequestMapping("/api/v1/internal/sender")
 @Slf4j
 @RequiredArgsConstructor
 public class InternalOrderController {

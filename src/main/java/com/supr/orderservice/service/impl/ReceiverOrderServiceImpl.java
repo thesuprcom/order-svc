@@ -16,6 +16,7 @@ import com.supr.orderservice.model.CustomerOrderDetail;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.UserDetails;
+import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
 import com.supr.orderservice.model.request.GiftConfirmRequest;
 import com.supr.orderservice.model.request.ProcessPaymentRequest;
@@ -247,7 +248,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
             throw new BadRequestException("EmailId and PhoneNumber cannot be empty ");
         }
         OrderEntity orderEntity = fetchSenderOrderDetail(verifyGiftRequest.getOrderId());
-        UserDetails receiver = orderEntity.getReceiver();
+        UserInfo receiver = orderEntity.getReceiver();
         userOtpRequest.setCountryCode(verifyGiftRequest.getCountryCode());
         if (verifyGiftRequest.getEmailId() != null) {
             userOtpRequest.setEmailId(verifyGiftRequest.getEmailId());
@@ -278,8 +279,8 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         VerifyGiftResponse verifyGiftResponse = customerService.verifyOtp(request, "receiver");
         if (verifyGiftResponse.success) {
             OrderEntity orderEntity = fetchSenderOrderDetail(verifyGiftOtpRequest.getOrderId());
-            verifyGiftResponse.setFrom(orderEntity.getSender().getName());
-            verifyGiftResponse.setTo(orderEntity.getReceiver().getName());
+            verifyGiftResponse.setFrom(orderEntity.getSender().getFirstName()+" "+orderEntity.getSender().getLastName());
+            verifyGiftResponse.setTo(orderEntity.getReceiver().getFirstName()+" "+orderEntity.getReceiver().getLastName());
             verifyGiftResponse.setOrderId(orderEntity.getOrderId());
             createReceiver(orderEntity, verifyGiftOtpRequest);
         } else {
@@ -292,7 +293,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     public GiftConfirmResponse confirmGift(String orderId, GiftConfirmRequest request) {
         OrderEntity orderEntity = fetchSenderOrderDetail(orderId);
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
-        checkItemDetailsRequest.setSkus(request.getGiftItems().stream().map(ItemInfo::getPskuCode).collect(Collectors.toList()));
+        checkItemDetailsRequest.setSkus(request.getGiftItems().stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
         ProductDataResponse productDataResponse = getSellerSkuResponse(orderId, orderEntity,
                 checkItemDetailsRequest);
         List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse,
@@ -388,7 +389,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     }
 
     @Retryable(value = {OrderServiceException.class}, maxAttempts = 3, backoff = @Backoff(delay = 1000))
-    private void processWalletRefund(UserDetails userDetails, BigDecimal refundAmount, OrderEntity orderEntity) {
+    private void processWalletRefund(UserInfo userDetails, BigDecimal refundAmount, OrderEntity orderEntity) {
         try {
             WalletResponse walletResponse = walletService.processRefund(userDetails, refundAmount, orderEntity);
         } catch (Exception exception) {
@@ -407,13 +408,13 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         request.setCountryCode(verifyGiftOtpRequest.getCountryCode());
         request.setEmailVerificationRequired(false);
         UserDetailResponse userDetailResponse = customerService.updateUserDetails(request);
-        UserDetails userDetails = orderEntity.getReceiver();
+        UserInfo userDetails = orderEntity.getReceiver();
         userDetails.setFirstName(userDetailResponse.getData().getFirstName());
         userDetails.setLastName(userDetailResponse.getData().getLastName());
         userDetails.setUserId(userDetailResponse.getData().getPublicId());
         userDetails.setEmailId(userDetailResponse.getData().getEmailId());
-        userDetails.setMobileNo(userDetailResponse.getData().getPhoneNumber());
-        userDetails.setPublicUrl(userDetailResponse.getData().getProfileUrl());
+        userDetails.setPhoneNumber(userDetailResponse.getData().getPhoneNumber());
+        userDetails.setProfileUrl(userDetailResponse.getData().getProfileUrl());
         orderEntity.setReceiver(userDetails);
         orderService.save(orderEntity);
     }

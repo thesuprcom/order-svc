@@ -20,7 +20,6 @@ public class PurchaseOrderRequest {
     private String orderId;
     private String brandId;
     private SellerInfo sellerInfo;
-    private UserDetails senderDetails;
     private String giftSentOption;
     private String receiverEmail;
     private String receiverPhone;

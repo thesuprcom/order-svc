@@ -52,8 +52,6 @@ public class OrderItemEntity extends OrderBaseEntity{
     @Column(updatable = false)
     private String countryCode;
 
-    private String storeId;
-
     private String brandId;
 
     private String pskuCode;
