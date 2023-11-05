@@ -21,24 +21,17 @@ import java.util.Optional;
 @Repository
 public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
-    List<OrderEntity> findAllBySellerIdAndBrandIdAndCountryCodeAndExternalStatusIn(String sellerId, String brandId,
-                                                                                   String countryCode,
-                                                                                   List<ExternalStatus> statuses,
-                                                                                   Pageable pageable);
-
 
     @Query("SELECT o.externalStatus, COUNT(o) FROM OrderEntity o " +
             "WHERE o.externalStatus IN :statusList " +
             "AND o.countryCode = :countryCode " +
             "AND o.sellerId = :sellerId " +
-            "AND o.brandId = :brandId " +
             "AND o.createdAt >= :startDate " +
             "GROUP BY o.status")
     List<Object[]> getOrderCountByStatusAndCountryCodeAndSellerIdAndDateGroupByStatus(
             @Param("statusList") List<ExternalStatus> statusList,
             @Param("countryCode") String countryCode,
             @Param("sellerId") String sellerId,
-            @Param("brandId") String brandId,
             @Param("startDate") LocalDate startDate
     );
 
@@ -46,14 +39,12 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
             "WHERE o.status = :status " +
             "AND o.countryCode = :countryCode " +
             "AND o.sellerId = :sellerId " +
-            "AND o.brandId = :brandId " +
             "AND o.createdAt >= :startDate " +
             "AND o.createdAt <= :endDate")
     Page<OrderEntity> findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(
             @Param("status") ExternalStatus status,
             @Param("countryCode") String countryCode,
             @Param("sellerId") String sellerId,
-            @Param("brandId") String brandId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate,
             Pageable pageable
@@ -65,7 +56,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
 
     List<OrderEntity> findAllByOrderId(String orderId);
 
-    List<OrderEntity> findByStatusAndSellerIdAndBrandId(ExternalStatus status, String sellerId, String brandId);
+    List<OrderEntity> findByStatusAndSellerId(ExternalStatus status, String sellerId);
 
     Optional<OrderEntity> findByOrderIdAndStatusNot(String orderId, OrderItemStatus status);
 

@@ -3,6 +3,7 @@ package com.supr.orderservice.model;
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
@@ -18,11 +19,10 @@ import static com.supr.orderservice.utils.Constants.ROUNDING_MODE_FOR_PRICE;
 import static com.supr.orderservice.utils.Constants.SCALE_FOR_PRICE;
 
 @Data
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 @NoArgsConstructor
 public class OrderPrice {
-    @JsonIgnore
-    private final Map<String, Object> additionalProps = new HashMap<>();
     private BigDecimal totalMrp;
     private BigDecimal totalPrice;
     private BigDecimal totalOfferPrice;
@@ -37,10 +37,6 @@ public class OrderPrice {
     private BigDecimal refundItemAmount;
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private BigDecimal inputRefundItemAmount;
-
-    public BigDecimal getTotalMrp() {
-        return totalMrp.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-    }
 
     public void setTotalMrp(BigDecimal totalMrp) {
         if (totalMrp != null) {
@@ -58,25 +54,15 @@ public class OrderPrice {
         }
     }
 
-    public BigDecimal getTotalOfferPrice() {
-        return totalOfferPrice.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-    }
-
-    public void setTotalOfferPrice(BigDecimal totalOfferPrice) {
-        if (totalOfferPrice != null) {
-            this.totalOfferPrice = totalOfferPrice.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getTotalDiscount() {
-        return totalDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-    }
-
-    public void setTotalDiscount(BigDecimal totalDiscount) {
-        if (totalDiscount != null) {
-            this.totalDiscount = totalDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
+//    public BigDecimal getTotalDiscount() {
+//        return totalDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
+//    }
+//
+//    public void setTotalDiscount(BigDecimal totalDiscount) {
+//        if (totalDiscount != null) {
+//            this.totalDiscount = totalDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
+//        }
+//    }
 
     public BigDecimal getTotalShipping() {
         return totalShipping.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
@@ -96,88 +82,6 @@ public class OrderPrice {
         if (totalVat != null) {
             this.totalVat = totalVat.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
         }
-    }
-
-    public BigDecimal getTotalCommission() {
-        return totalCommission.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-    }
-
-    public void setTotalCommission(BigDecimal totalCommission) {
-        if (totalCommission != null) {
-            this.totalCommission = totalCommission.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getTotalBufferAmount() {
-        return Optional.ofNullable(totalBufferAmount)
-                .map(amount -> amount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE))
-                .orElse(BigDecimal.ZERO);
-    }
-
-    public void setTotalBufferAmount(BigDecimal totalBufferAmount) {
-        if (totalBufferAmount != null) {
-            this.totalBufferAmount = totalBufferAmount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getTotalCouponDiscount() {
-        return Optional.ofNullable(totalCouponDiscount)
-                .map(amount -> amount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE))
-                .orElse(BigDecimal.ZERO);
-    }
-
-    public void setTotalCouponDiscount(BigDecimal totalCouponDiscount) {
-        if (totalCouponDiscount != null) {
-            this.totalCouponDiscount = totalCouponDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getTotalMerchantCouponDiscount() {
-        return Optional.ofNullable(totalMerchantCouponDiscount)
-                .map(amount -> amount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE))
-                .orElse(BigDecimal.ZERO);
-    }
-
-    public void setTotalMerchantCouponDiscount(BigDecimal totalMerchantCouponDiscount) {
-        if (totalMerchantCouponDiscount != null) {
-            this.totalMerchantCouponDiscount = totalMerchantCouponDiscount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getRefundItemAmount() {
-        if (refundItemAmount != null) {
-            return refundItemAmount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-        return null;
-    }
-
-    public void setRefundItemAmount(BigDecimal refundItemAmount) {
-        if (refundItemAmount != null) {
-            this.refundItemAmount = refundItemAmount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    public BigDecimal getInputRefundItemAmount() {
-        if (inputRefundItemAmount != null) {
-            return inputRefundItemAmount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-        return null;
-    }
-
-    public void setInputRefundItemAmount(BigDecimal inputRefundItemAmount) {
-        if (inputRefundItemAmount != null) {
-            this.inputRefundItemAmount = inputRefundItemAmount.setScale(SCALE_FOR_PRICE, ROUNDING_MODE_FOR_PRICE);
-        }
-    }
-
-    @JsonAnyGetter
-    public Map<String, Object> getAdditionalProperties() {
-        return this.additionalProps;
-    }
-
-    @JsonAnySetter
-    public void setAdditionalProps(String key, Object value) {
-        this.additionalProps.put(key, value);
     }
 
     public static final class OrderPriceBuilder {

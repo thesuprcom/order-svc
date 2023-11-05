@@ -7,6 +7,7 @@ import com.supr.orderservice.entity.OrderItemEntity;
 import com.supr.orderservice.entity.TransactionEntity;
 import com.supr.orderservice.enums.CouponInventoryOperationType;
 import com.supr.orderservice.enums.ErrorEnum;
+import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.enums.GiftSentOption;
 import com.supr.orderservice.enums.GreetingCardStatus;
 import com.supr.orderservice.enums.OrderChangeEvent;
@@ -23,6 +24,8 @@ import com.supr.orderservice.model.CouponDetails;
 import com.supr.orderservice.model.GreetingCard;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
+import com.supr.orderservice.model.OrderSummaryDTO;
+import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.SavedCardDetails;
 import com.supr.orderservice.model.UserCartDTO;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
@@ -34,6 +37,8 @@ import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.PurchaseOrderResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
 import com.supr.orderservice.repository.CardDetailsRepository;
+import com.supr.orderservice.repository.GreetingCardRepository;
+import com.supr.orderservice.repository.OrderItemRepository;
 import com.supr.orderservice.service.CouponInventoryManagementService;
 import com.supr.orderservice.service.GreetingCardService;
 import com.supr.orderservice.service.OrderInventoryManagementService;
@@ -58,6 +63,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.supr.orderservice.enums.CouponInventoryUpdateType.USER_LEVEL_AND_COUPON_LEVEL;
@@ -68,6 +74,7 @@ import static com.supr.orderservice.utils.DateUtils.getScheduledTimestamp;
 @Service
 @RequiredArgsConstructor
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
+    private final OrderItemRepository orderItemRepository;
     private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final CartServiceClient cartServiceClient;
@@ -76,6 +83,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final SenderOrderService senderOrderService;
     private final GreetingCardService greetingCardService;
     private final CardDetailsRepository cardDetailsRepository;
+    private final GreetingCardRepository greetingCardRepository;
     private final StateMachineManager stateMachineManager;
     private final InventoryServiceClient inventoryServiceClient;
     private final PaymentGatewayService paymentGatewayService;
@@ -84,27 +92,31 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     @Override
     public PurchaseOrderResponse purchaseOrder(PurchaseOrderRequest request) {
-        OrderEntity order = createOrderEntity(request);
-        final OrderEntity finalOrder = order;
-        final TransactionEntity transaction = transactionService.createTransaction(finalOrder);
-        order.setTransaction(transaction);
-        order.setOrderItemEntities(generateOrderItems(finalOrder, request));
-        order.setGreetingCard(fetchGreetingCard(finalOrder, request));
-        if (request.isScheduledOrder()) {
-            order.setOrderScheduled(true);
-            order.setScheduledDate(getScheduledTimestamp(request.getScheduleDate()));
+        try {
+            OrderEntity order = createOrderEntity(request);
+            final OrderEntity finalOrder = order;
+            final TransactionEntity transaction = transactionService.createTransaction(finalOrder);
+            order.setTransaction(transaction);
+            List<OrderItemEntity> orderItemEntities = generateOrderItems(finalOrder, request);
+            orderItemRepository.saveAll(orderItemEntities);
+            order.setOrderItemEntities(orderItemEntities);
+            GreetingCardEntity greetingCard = greetingCardRepository.save(fetchGreetingCard(finalOrder, request));
+            order.setGreetingCard(greetingCard);
+            if (request.isScheduledOrder()) {
+                order.setOrderScheduled(true);
+                order.setScheduledDate(getScheduledTimestamp(request.getScheduleDate()));
+            }
+            order = orderService.save(order);
+            SavedCardDetails savedCardDetails = paymentGatewayService.paymentDetails(order.getUserId());
+            PurchaseOrderResponse response = new PurchaseOrderResponse();
+            response.setOrderId(order.getOrderId());
+            response.setAmountPayable(order.getTotalAmount());
+            response.setSavedCards(savedCardDetails.getSavedCards());
+            return response;
+        }catch (Exception exception){
+            log.error("Error while creating the order: {}", exception);
+            throw new OrderServiceException("Unable to create the order");
         }
-        order = orderService.save(order);
-        order.getOrderItemEntities().forEach(orderItemEntity -> {
-            stateMachineManager.moveToNextState(orderItemEntity, StateMachineType.SENDER.name(),
-                    OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
-        });
-        SavedCardDetails savedCardDetails = paymentGatewayService.paymentDetails(order.getUserId());
-        PurchaseOrderResponse response = new PurchaseOrderResponse();
-        response.setOrderId(order.getOrderId());
-        response.setAmountPayable(order.getTotalAmount());
-        response.setSavedCardDetails(savedCardDetails);
-        return response;
     }
 
 
@@ -122,35 +134,37 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         order.setStatus(OrderItemStatus.ANY);
 
         UserCartDTO userCartDTO = request.getUserCartDTO();
-        order.setBrandId(request.getBrandId());
-        order.setInvitationLink(request.getReceiverInvitationLink());
-        order.setReceiverEmail(request.getReceiverEmail());
-        order.setReceiverPhone(request.getReceiverPhone());
+        order.setReceiverEmail(userCartDTO.getReceiverEmail());
+        order.setReceiverPhone(userCartDTO.getReceiverPhone());
         order.setReceiver(userCartDTO.getReceiver());
         order.setShippingAddress(request.getUserCartDTO().getReceiverAddress());
-        order.setBillingAddress(request.getBillingAddress());
+        order.setBillingAddress(userCartDTO.getBillingAddress());
         order.setPaymentMode(PaymentMode.Card);
         order.setCountryCode(request.getCountryCode());
         order.setCurrencyCode(request.getCurrencyCode());
-        order.setGiftSentOption(GiftSentOption.valueOf(request.getGiftSentOption()));
+        order.setGiftSentOption(userCartDTO.getGiftSentThrough());
         OrderPrice orderPrice = fetchOrderPrice(request);
         order.setTotalAmount(ApplicationUtils.roundUpToTwoDecimalPlaces(getPayableAmount(orderPrice)));
         order.setPrice(orderPrice);
         order.setSellerId(userCartDTO.getSellerInfo().getStoreId());
         order.setUserId(userCartDTO.getUserId());
-        order.setSellerInfo(request.getSellerInfo());
+        order.setSellerInfo(userCartDTO.getSellerInfo());
         order.setSender(userCartDTO.getSender());
         order.setIpAddress(request.getIpAddress());
         order.setCouponDetails(userCartDTO.getCouponDetails());
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         order.setOrderType(OrderType.SENDER);
-        stateMachineManager.moveToNextState(order, StateMachineType.SENDER.name(),
-                OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
-        return order;
+        order.setStatus(OrderItemStatus.CREATED);
+        order.setExternalStatus(ExternalStatus.CREATED);
+        return orderService.save(order);
     }
 
     private OrderPrice fetchOrderPrice(PurchaseOrderRequest request) {
-        return new OrderPrice();
+        OrderPrice orderPrice = new OrderPrice();
+        orderPrice.setTotalPrice(request.getUserCartDTO().getPriceDetails().getTotalPrice());
+        orderPrice.setTotalShipping(request.getUserCartDTO().getPriceDetails().getTotalShipping());
+        orderPrice.setTotalVat(request.getUserCartDTO().getPriceDetails().getTotalTax());
+        return orderPrice;
     }
 
     private OrderEntity createOrder(String orderId) {
@@ -180,7 +194,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     private BigDecimal getPayableAmount(OrderPrice orderPrice) {
-        return orderPrice.getTotalPrice().add(orderPrice.getTotalBufferAmount());
+        return orderPrice.getTotalPrice();
     }
 
     private GreetingCardEntity fetchGreetingCard(OrderEntity order, PurchaseOrderRequest request) {
@@ -208,7 +222,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         List<ItemInfo> items = userCartDTO.getGiftItems();
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
         checkItemDetailsRequest.setSkus(items.stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
-        ProductDataResponse productDataResponse =
+        Map<String, Product> productDataResponse =
                 inventoryServiceClient.fetchSellerSkuDetails(order.getCountryCode(), checkItemDetailsRequest);
         for (ItemInfo cartInfo : items) {
             OrderItemEntity orderItem = new OrderItemEntity();
@@ -219,20 +233,21 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setPskuCode(cartInfo.getPsku());
             orderItem.setItemInfo(cartInfo);
             orderItem.setSellerId(userCartDTO.getSellerInfo().getStoreId());
-            orderItem.setPrice(cartInfo.getItemPriceDetails());
             orderItem.setOrderItemQuantity(cartInfo.getQuantity());
             orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
             orderItem.setBrandId(request.getUserCartDTO().getSellerInfo().getBrandId());
-            orderItem.setBrandId(order.getBrandId());
+            orderItem.setBrandId(cartInfo.getBrandCode());
             orderItem.setProductId(cartInfo.getSkus());
             orderItem.setProductTitle(cartInfo.getGiftTitle());
             orderItem.setProductBrand(cartInfo.getBrandCode());
             orderItem.setProductFamily(cartInfo.getBrandName());
             orderItem.setImages(cartInfo.getGiftImages());
             orderItem.setParentSku(cartInfo.getPsku());
-            orderItem.setPrice(cartInfo.getItemPriceDetails());
-            orderItem.setTotalPrice(cartInfo.getItemPriceDetails().getTotalPrice());
+            orderItem.setPrice(fetchItemPrice(cartInfo, userCartDTO));
+            orderItem.setTotalPrice(orderItem.getPrice().getTotalPrice());
             orderItem.setCouponDetails(userCartDTO.getCouponDetails());
+            orderItem.setStatus(OrderItemStatus.CREATED);
+            orderItem.setExternalStatus(ExternalStatus.CREATED);
             orderItems.add(orderItem);
         }
         List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse, orderItems);
@@ -240,6 +255,14 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new OrderServiceException("Few items in the cart are OUT_OF_STOCK");
         }
         return OrderUtils.updatePriceFromCatalogService(productDataResponse, orderItems);
+    }
+
+    private OrderPrice fetchItemPrice(ItemInfo cartInfo, UserCartDTO userCartDTO) {
+        OrderSummaryDTO orderSummary = userCartDTO.getOrderSummary();
+        OrderPrice orderPrice = new OrderPrice();
+        orderPrice.setTotalPrice(cartInfo.getSalePrice().multiply(cartInfo.getQuantity()));
+        orderPrice.setTotalShipping(cartInfo.getShippingPrice());
+        return orderPrice;
     }
 
     private void deleteAllExistingOrderItems(final Long orderId) {

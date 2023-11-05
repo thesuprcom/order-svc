@@ -91,7 +91,7 @@ public class OrderUtils {
             orderItem.setPrice(cartInfo.getItemPriceDetails());
             orderItem.setOrderItemQuantity(cartInfo.getQuantity());
             orderItem.setSellerId(order.getSellerId());
-            orderItem.setBrandId(order.getBrandId());
+            orderItem.setBrandId(cartInfo.getBrandCode());
             orderItem.setProductId(cartInfo.getPsku());
             orderItem.setPartnerSku(cartInfo.getSkus());
             orderItem.setProductTitle(cartInfo.getGiftTitle());
@@ -230,13 +230,13 @@ public class OrderUtils {
         }
     }
 
-    public static List<OrderItemEntity> validateStock(ProductDataResponse productDataResponse,
+    public static List<OrderItemEntity> validateStock(Map<String, Product> productDataResponse,
                                                       List<OrderItemEntity> orderItemEntities) {
         List<OrderItemEntity> orderItemEntityList = new ArrayList<>();
         Map<String, OrderItemEntity> orderItemEntityMap =
                 orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getPskuCode, Function.identity()));
         Optional<Product> productOptional =
-                productDataResponse.getProducts().entrySet().stream().filter(entry -> entry.getValue().isInventoryTrack() &&
+                productDataResponse.entrySet().stream().filter(entry -> entry.getValue().isInventoryTrack() &&
                                 entry.getValue().getStock() >= orderItemEntityMap.get(entry.getKey()).getOrderItemQuantity().intValue())
                         .map(Map.Entry::getValue)
                         .findFirst();
@@ -247,15 +247,15 @@ public class OrderUtils {
         return orderItemEntityList;
     }
 
-    public static List<OrderItemEntity> updatePriceFromCatalogService(ProductDataResponse productDataResponse,
+    public static List<OrderItemEntity> updatePriceFromCatalogService(Map<String, Product> productDataResponse,
                                                                       List<OrderItemEntity> orderItemEntities) {
         List<OrderItemEntity> orderItemEntityList;
         Map<String, OrderItemEntity> orderItemEntityMap =
-                orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getPskuCode, Function.identity()));
-        orderItemEntityList = productDataResponse.getProducts().entrySet().stream().map(entry -> {
-            OrderItemEntity orderItem = orderItemEntityMap.get(entry.getValue().getPskuCode());
-            orderItem.setTotalPrice(entry.getValue().getMisc().getSalePrice().setScale(2, RoundingMode.HALF_UP));
-            OrderPrice itemPrice = fetchOrderItemPrice(orderItem.getPrice(), entry.getValue().getMisc());
+                orderItemEntities.stream().collect(Collectors.toMap(OrderItemEntity::getProductId, Function.identity()));
+        orderItemEntityList = productDataResponse.values().stream().map(product -> {
+            OrderItemEntity orderItem = orderItemEntityMap.get(product.getSku());
+            orderItem.setTotalPrice(product.getMisc().getSalePrice().setScale(2, RoundingMode.HALF_UP));
+            OrderPrice itemPrice = fetchOrderItemPrice(orderItem.getPrice(), product.getMisc());
             orderItem.setPrice(itemPrice);
             return orderItem;
         }).collect(Collectors.toList());

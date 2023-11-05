@@ -26,7 +26,8 @@ public enum OrderItemStatus {
     GIFT_SWAPPED(ExternalStatus.GIFT_SWAPPED,Optional.empty(),Optional.empty()),
     ANY(ExternalStatus.NOT_APPLICABLE, Optional.empty(),Optional.empty()),
     ANOTHER_VARIANT(ExternalStatus.ANOTHER_VARIANT, Optional.empty(), Optional.empty()),
-    ORDER_SCHEDULED(ExternalStatus.ORDER_SCHEDULED, Optional.empty(), Optional.empty());
+    ORDER_SCHEDULED(ExternalStatus.ORDER_SCHEDULED, Optional.empty(), Optional.empty()),
+    CHECKOUT(ExternalStatus.ORDER_SCHEDULED, Optional.empty(), Optional.empty());
     private final ExternalStatus externalStatus;
     private final Optional<NotificationEventEnum> notificationEventEnumOptional;
     private final Optional<PaymentActionEnum> paymentActionEnum;

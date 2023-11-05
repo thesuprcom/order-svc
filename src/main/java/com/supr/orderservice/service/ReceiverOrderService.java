@@ -27,7 +27,7 @@ public interface ReceiverOrderService {
     ViewGiftResponse viewGift(String orderId);
     ItemDetailResponse fetchItemDetails(String orderId, String itemId);
 
-    GiftSwapOptionsResponse fetchSwapOptions(String orderId);
+    GiftSwapOptionsResponse fetchSwapOptions(String orderId, String sku);
 
     SwapGiftResponse swapGift(SwapGiftRequest swapGiftRequest);
 

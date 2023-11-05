@@ -57,11 +57,9 @@ import static javax.persistence.CascadeType.REFRESH;
 @Builder
 @NoArgsConstructor
 @Table(name = "user_orders")
-@EqualsAndHashCode(callSuper = true)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor
 public class OrderEntity extends OrderBaseEntity {
     private String sellerId;
-    private String brandId;
     @NaturalId
     private String orderId;
     @Column(updatable = false)
@@ -133,6 +131,7 @@ public class OrderEntity extends OrderBaseEntity {
     private List<OrderItemEntity> orderItemEntities = new LinkedList<>();
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "greeting_card_id")
+    @EqualsAndHashCode.Exclude
     private GreetingCardEntity greetingCard;
     @NotAudited
     @JsonIgnore

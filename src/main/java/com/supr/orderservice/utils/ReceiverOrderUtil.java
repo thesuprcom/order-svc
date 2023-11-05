@@ -13,7 +13,6 @@ public class ReceiverOrderUtil {
         OrderEntity order = new OrderEntity();
         order.setOrderId(senderOrder.getOrderId());
         order.setOrderType(OrderType.RECEIVER);
-        order.setBrandId(senderOrder.getBrandId());
         order.setInvitationLink(senderOrder.getInvitationLink());
         order.setReceiverEmail(senderOrder.getReceiverEmail());
         order.setReceiverPhone(senderOrder.getReceiverPhone());

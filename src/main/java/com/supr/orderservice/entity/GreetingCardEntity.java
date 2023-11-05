@@ -25,7 +25,6 @@ import javax.persistence.Table;
 @Builder
 @NoArgsConstructor
 @Table(name = "order_greeting_card_item")
-@EqualsAndHashCode(callSuper = true)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class GreetingCardEntity extends BaseEntity{
 

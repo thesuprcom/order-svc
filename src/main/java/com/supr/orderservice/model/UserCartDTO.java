@@ -1,13 +1,19 @@
 package com.supr.orderservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.supr.orderservice.enums.GiftSentOption;
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class UserCartDTO {
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+public class UserCartDTO implements Serializable {
     private List<ItemInfo> giftItems;
     private PriceDetails priceDetails;
     private BigDecimal amount;

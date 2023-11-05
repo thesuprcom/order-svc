@@ -15,6 +15,7 @@ import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.CustomerOrderDetail;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
+import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.UserDetails;
 import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
@@ -66,6 +67,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -144,15 +146,14 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     }
 
     @Override
-    public GiftSwapOptionsResponse fetchSwapOptions(String orderId) {
+    public GiftSwapOptionsResponse fetchSwapOptions(String orderId, String sku) {
         log.info("Request to fetch the gift swap options for order: {}", orderId);
         OrderEntity orderEntity = fetchReceiverOrderDetail(orderId);
-        String brandId = orderEntity.getBrandId();
         String totalPrice = orderEntity.getTotalAmount().toString();
         List<ItemInfo> itemInfo;
         try {
             log.info("Calling inventory service to fetch swap options for orderId: {}", orderId);
-            itemInfo = inventoryServiceClient.fetchItemDetailForSwap(brandId, totalPrice, 0, 10);
+            itemInfo = inventoryServiceClient.fetchItemDetailForSwap(sku, totalPrice, 0, 10);
         } catch (Exception e) {
             log.error("Unable to fetch the item details!!", e);
             throw new BadRequestException("Unable to fetch the item details!!");
@@ -294,7 +295,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         OrderEntity orderEntity = fetchSenderOrderDetail(orderId);
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
         checkItemDetailsRequest.setSkus(request.getGiftItems().stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
-        ProductDataResponse productDataResponse = getSellerSkuResponse(orderId, orderEntity,
+        Map<String, Product> productDataResponse = getSellerSkuResponse(orderId, orderEntity,
                 checkItemDetailsRequest);
         List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse,
                 orderEntity.getOrderItemEntities());
@@ -312,7 +313,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     }
 
     private void processItemVariantChanges(GiftConfirmRequest request, OrderEntity orderEntity,
-                                           ProductDataResponse productDataResponse) {
+                                           Map<String, Product> productDataResponse) {
         List<OrderItemEntity> availableOrderItem = OrderUtils.updatePriceFromCatalogService(productDataResponse,
                 orderEntity.getOrderItemEntities());
         OrderPrice orderPrice = reCalculatePrice(availableOrderItem);
@@ -419,9 +420,9 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         orderService.save(orderEntity);
     }
 
-    private ProductDataResponse getSellerSkuResponse(String orderId, OrderEntity orderEntity,
+    private Map<String, Product> getSellerSkuResponse(String orderId, OrderEntity orderEntity,
                                                          CheckItemDetailsRequest checkItemDetailsRequest) {
-        ProductDataResponse productDataResponse;
+        Map<String, Product> productDataResponse = new HashMap<>();
         try {
             productDataResponse = inventoryServiceClient.fetchSellerSkuDetails(orderEntity.getCountryCode(), checkItemDetailsRequest);
         } catch (Exception exception) {

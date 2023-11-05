@@ -3,7 +3,6 @@ package com.supr.orderservice.service.impl;
 import com.supr.orderservice.entity.OrderEntity;
 import com.supr.orderservice.entity.OrderItemEntity;
 import com.supr.orderservice.entity.OrderItemStatusHistoryEntity;
-import com.supr.orderservice.entity.statemachine.StateMachineTypeEntity;
 import com.supr.orderservice.enums.EntityTypeEnum;
 import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.exception.OrderServiceException;
@@ -12,11 +11,9 @@ import com.supr.orderservice.model.ItemStatusChange;
 import com.supr.orderservice.model.OrderCount;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.PortalOrderDetail;
-import com.supr.orderservice.model.request.PortalOrderCancelRequest;
 import com.supr.orderservice.model.request.PortalUpdateOrderRequest;
 import com.supr.orderservice.model.request.SearchOrderRequest;
 import com.supr.orderservice.model.request.StatusChangeRequest;
-import com.supr.orderservice.model.response.PortalOrderCancelResponse;
 import com.supr.orderservice.model.response.PortalOrderDetailListResponse;
 import com.supr.orderservice.model.response.PortalOrderDetailResponse;
 import com.supr.orderservice.model.response.PortalOrderSearchResponse;
@@ -56,14 +53,14 @@ public class SellerPortalServiceImpl implements SellerPortalService {
     private final OrderItemStatusHistoryRepository orderItemStatusHistoryRepository;
 
     @Override
-    public PortalOrderDetailListResponse getOrderList(String countryCode, String sellerId, String brandId,
+    public PortalOrderDetailListResponse getOrderList(String countryCode, String sellerId, String brandCode,
                                                       int days, Pageable pageable) {
         List<ExternalStatus> externalStatuses = ApplicationUtils.getSellerPortalExternalStatus();
         LocalDate startDate = LocalDate.now().minusDays(days);
         LocalDate endDate = LocalDate.now();
         List<Object[]> orderCountList = orderRepository.
                 getOrderCountByStatusAndCountryCodeAndSellerIdAndDateGroupByStatus(externalStatuses, countryCode,
-                        sellerId, brandId, startDate);
+                        sellerId, startDate);
         List<OrderCount> orderCounts = new ArrayList<>();
         long totalOrderCount = 0;
         for (Object[] result : orderCountList) {
@@ -74,7 +71,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         }
         Page<OrderEntity> orderEntities = orderRepository.
                 findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(ExternalStatus.PLACED,
-                        countryCode, sellerId, brandId, startDate, endDate, pageable);
+                        countryCode, sellerId, startDate, endDate, pageable);
         List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
         long totalOrderItems = portalOrderDetails.stream()
                 .mapToInt(customObject -> customObject.getItemInfos().size()).sum();
@@ -213,8 +210,8 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         }
         if (request.getStatus() != null) {
             List<OrderEntity> orderEntities =
-                    orderRepository.findByStatusAndSellerIdAndBrandId(OrderUtils.fetchExternalStatus(request.getStatus()),
-                            request.getSellerId(), request.getBrandId());
+                    orderRepository.findByStatusAndSellerId(OrderUtils.fetchExternalStatus(request.getStatus()),
+                            request.getSellerId());
             List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
             response.setOrderDetails(portalOrderDetails);
             return response;

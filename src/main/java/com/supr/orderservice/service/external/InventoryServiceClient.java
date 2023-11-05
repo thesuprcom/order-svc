@@ -1,6 +1,7 @@
 package com.supr.orderservice.service.external;
 
 import com.supr.orderservice.model.ItemInfo;
+import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
 import com.supr.orderservice.model.request.UpdateItemStatusRequest;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
+import java.util.Map;
 
 import static com.supr.orderservice.utils.Constants.STORE_ID_HEADER;
 
@@ -34,13 +36,13 @@ public interface InventoryServiceClient {
                               @PathVariable(name = "item-id") String pskuCode);
 
     @GetMapping("/catalog/item-detail/{brand-id}/{total-amount}")
-    List<ItemInfo> fetchItemDetailForSwap(@PathVariable(name = "brand-id") String brandId,
+    List<ItemInfo> fetchItemDetailForSwap(@PathVariable(name = "sku") String sku,
                                           @PathVariable(name = "total-amount") String totalAmount,
                                           @RequestParam(value = "page", defaultValue = "0") int page,
                                           @RequestParam(value = "size", defaultValue = "20") int size);
 
     @PostMapping("/api/v1/{country-code}/product/check-stock/")
-    ProductDataResponse fetchSellerSkuDetails(@PathVariable(name = "country-code") String countryCode,
-                                              @RequestBody CheckItemDetailsRequest checkItemDetailsRequest);
+    Map<String, Product> fetchSellerSkuDetails(@PathVariable(name = "country-code") String countryCode,
+                                               @RequestBody CheckItemDetailsRequest checkItemDetailsRequest);
 
 }

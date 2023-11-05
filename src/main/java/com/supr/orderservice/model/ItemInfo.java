@@ -1,6 +1,8 @@
 package com.supr.orderservice.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.supr.orderservice.entity.OrderItemStatusHistoryEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
 import javax.validation.constraints.NotNull;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
@@ -19,7 +22,8 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ItemInfo {
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+public class ItemInfo implements Serializable {
 
     private String skus;
     private String psku;

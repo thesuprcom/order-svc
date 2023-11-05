@@ -14,32 +14,37 @@ import java.util.Optional;
 
 @Repository
 public class StateMachineDao {
-  private final StateMachineRepository stateMachineRepository;
+    private final StateMachineRepository stateMachineRepository;
 
-  public StateMachineDao(final StateMachineRepository stateMachineRepository) {
-    this.stateMachineRepository = stateMachineRepository;
-  }
+    public StateMachineDao(final StateMachineRepository stateMachineRepository) {
+        this.stateMachineRepository = stateMachineRepository;
+    }
 
-  public Optional<StateMachineEntity> getStateMachine(final String stateMachineType,
-                                                      final OrderItemStatus fromState,
-                                                      final String stateChangeEvent,
-                                                      final EntityTypeEnum entityTypeEnum) {
+    public Optional<StateMachineEntity> getStateMachine(final String stateMachineType,
+                                                        final OrderItemStatus fromState,
+                                                        final String stateChangeEvent,
+                                                        final EntityTypeEnum entityTypeEnum) {
 
-    StateMachineTypeEntity stateMachineTypeEntity = new StateMachineTypeEntity();
-    stateMachineTypeEntity.setType(stateMachineType);
-    stateMachineTypeEntity.setEntityType(entityTypeEnum);
+        StateMachineTypeEntity stateMachineTypeEntity = new StateMachineTypeEntity();
+        stateMachineTypeEntity.setType(stateMachineType);
+        stateMachineTypeEntity.setEntityType(entityTypeEnum);
 
-    StateEntity fromStateEntity = new StateEntity();
-    fromStateEntity.setSystemInternalStatus(fromState);
+        StateEntity fromStateEntity = new StateEntity();
+        fromStateEntity.setSystemInternalStatus(fromState);
 
-    StateChangeEventEntity stateChangeEventEntity = new StateChangeEventEntity();
-    stateChangeEventEntity.setEvent(stateChangeEvent);
+        StateChangeEventEntity stateChangeEventEntity = new StateChangeEventEntity();
+        stateChangeEventEntity.setEvent(stateChangeEvent);
 
-    StateMachineEntity stateMachineEntity = new StateMachineEntity();
-    stateMachineEntity.setStateMachineTypeEntity(stateMachineTypeEntity);
-    stateMachineEntity.setFromState(fromStateEntity);
-    stateMachineEntity.setStateChangeEventEntity(stateChangeEventEntity);
+        StateMachineEntity stateMachineEntity = new StateMachineEntity();
+        stateMachineEntity.setStateMachineTypeEntity(stateMachineTypeEntity);
+        stateMachineEntity.setFromState(fromStateEntity);
+        stateMachineEntity.setStateChangeEventEntity(stateChangeEventEntity);
 
-    return stateMachineRepository.findOne(Example.of(stateMachineEntity));
-  }
+        Optional<StateMachineEntity> stateMachineOptional =
+                stateMachineRepository.findOne(Example.of(stateMachineEntity));
+        if (stateMachineOptional.isPresent()) {
+            StateMachineEntity stateMachine = stateMachineOptional.get();
+        }
+        return stateMachineOptional;
+    }
 }

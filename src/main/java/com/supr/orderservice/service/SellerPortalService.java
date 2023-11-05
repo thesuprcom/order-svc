@@ -11,7 +11,7 @@ import com.supr.orderservice.model.response.PortalUpdateOrderResponse;
 import org.springframework.data.domain.Pageable;
 
 public interface SellerPortalService {
-    PortalOrderDetailListResponse getOrderList(String countryCode, String sellerId, String brandId, int days,
+    PortalOrderDetailListResponse getOrderList(String countryCode, String sellerId, String brandCode, int days,
                                                Pageable pageable);
     PortalOrderDetailResponse getOrderDetail(String orderId);
     PortalUpdateOrderResponse updateOrder(PortalUpdateOrderRequest portalUpdateOrderRequest);

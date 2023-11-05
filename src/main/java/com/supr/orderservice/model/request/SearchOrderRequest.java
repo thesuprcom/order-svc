@@ -10,8 +10,6 @@ import javax.validation.constraints.NotEmpty;
 public class SearchOrderRequest {
     @NotEmpty(message = "Seller Id cannot be empty")
     private String sellerId;
-    @NotEmpty(message = "Brand Id cannot be empty")
-    private String brandId;
     private String orderId;
     private String status;
     private String deliveryMethod;

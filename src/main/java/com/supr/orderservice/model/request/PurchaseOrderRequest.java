@@ -2,6 +2,8 @@ package com.supr.orderservice.model.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.supr.orderservice.model.Address;
 import com.supr.orderservice.model.SellerInfo;
 import com.supr.orderservice.model.UserCartDTO;
@@ -10,25 +12,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
+
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-@NoArgsConstructor
-@AllArgsConstructor
-public class PurchaseOrderRequest {
-    @JsonUnwrapped
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
+public class PurchaseOrderRequest implements Serializable {
+    //@JsonUnwrapped
     private UserCartDTO userCartDTO;
     private String orderId;
-    private String brandId;
-    private SellerInfo sellerInfo;
-    private String giftSentOption;
-    private String receiverEmail;
-    private String receiverPhone;
-    private String receiverInvitationLink;
-    private String paymentMode;
     private String countryCode;
     private String currencyCode;
     private String ipAddress;
-    private Address billingAddress;
     private boolean isScheduledOrder;
     private String scheduleDate;
 }

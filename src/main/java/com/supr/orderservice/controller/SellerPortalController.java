@@ -29,14 +29,14 @@ import static com.supr.orderservice.utils.Constants.X_COUNTRY_CODE_HEADER_KEY;
 public class SellerPortalController {
     private final SellerPortalService sellerPortalService;
 
-    @GetMapping("/list/{seller-id}/{brand-id}")
+    @GetMapping("/list/{seller-id}/{brand-code}")
     public ResponseEntity getOrderList(@RequestHeader(name = X_COUNTRY_CODE_HEADER_KEY) String countryCode,
                                        @PathVariable(name = "seller-id") String sellerId,
-                                       @PathVariable(name = "brand-id") String brandId,
+                                       @PathVariable(name = "brand-code") String brandCode,
                                        @RequestParam(name = "days") int days,
                                        @RequestParam(value = "page", defaultValue = "0") int page,
                                        @RequestParam(value = "size", defaultValue = "20") int size) {
-        return new ResponseEntity(sellerPortalService.getOrderList(countryCode, sellerId, brandId, days,
+        return new ResponseEntity(sellerPortalService.getOrderList(countryCode, sellerId, brandCode, days,
                 PageRequest.of(page, size, Sort.Direction.DESC, "id")), HttpStatus.OK);
     }
 
