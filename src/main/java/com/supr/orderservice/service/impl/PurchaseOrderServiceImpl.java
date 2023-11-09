@@ -23,6 +23,7 @@ import com.supr.orderservice.model.GreetingCard;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.OrderSummaryDTO;
+import com.supr.orderservice.model.PriceDetails;
 import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.SavedCardDetails;
 import com.supr.orderservice.model.UserCartDTO;
@@ -109,7 +110,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             response.setAmountPayable(order.getTotalAmount());
             response.setSavedCards(savedCardDetails.getSavedCards());
             return response;
-        }catch (Exception exception){
+        } catch (Exception exception) {
             log.error("Error while creating the order: {}", exception);
             throw new OrderServiceException("Unable to create the order");
         }
@@ -150,14 +151,20 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         order.setOrderType(OrderType.SENDER);
         order.setStatus(OrderItemStatus.CREATED);
         order.setExternalStatus(ExternalStatus.CREATED);
+        order.setUpdatedBy(request.getUpdatedBy());
         return orderService.save(order);
     }
 
     private OrderPrice fetchOrderPrice(PurchaseOrderRequest request) {
         OrderPrice orderPrice = new OrderPrice();
-        orderPrice.setTotalPrice(request.getUserCartDTO().getPriceDetails().getTotalPrice());
-        orderPrice.setTotalShipping(request.getUserCartDTO().getPriceDetails().getTotalShipping());
-        orderPrice.setTotalTax(request.getUserCartDTO().getPriceDetails().getTotalTax());
+        PriceDetails priceDetails = request.getUserCartDTO().getPriceDetails();
+        orderPrice.setTotalPrice(priceDetails.getTotalPrice());
+        orderPrice.setTotalShipping(priceDetails.getTotalShipping());
+        orderPrice.setTotalTax(priceDetails.getTotalTax());
+        orderPrice.setFinalPrice(priceDetails.getFinalPrice());
+        orderPrice.setTotalWalletPrice(priceDetails.getTotalWalletPrice());
+        orderPrice.setTotalDiscount(priceDetails.getTotalDiscount());
+        orderPrice.setTotalCouponDiscount(priceDetails.getTotalCouponDiscount());
         return orderPrice;
     }
 
@@ -188,7 +195,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     private BigDecimal getPayableAmount(OrderPrice orderPrice) {
-        return orderPrice.getTotalPrice();
+        return orderPrice.getFinalPrice();
     }
 
     private GreetingCardEntity fetchGreetingCard(OrderEntity order, PurchaseOrderRequest request) {
@@ -212,36 +219,46 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         List<OrderItemEntity> orderItems = new ArrayList<>();
         int suffix = 1;
+        int orderItemId = 1;
         final UserCartDTO userCartDTO = request.getUserCartDTO();
-        List<ItemInfo> items = userCartDTO.getGiftItems();
+        Map<String, List<ItemInfo>> itemsMap =
+                userCartDTO.getGiftItems().stream().collect(Collectors.groupingBy(ItemInfo::getSellerId));
         CheckItemDetailsRequest checkItemDetailsRequest = new CheckItemDetailsRequest();
-        checkItemDetailsRequest.setSkus(items.stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
+        checkItemDetailsRequest.setSkus(userCartDTO.getGiftItems().stream().map(ItemInfo::getSkus).collect(Collectors.toList()));
         Map<String, Product> productDataResponse =
                 inventoryServiceClient.fetchSellerSkuDetails(order.getCountryCode(), checkItemDetailsRequest);
-        for (ItemInfo cartInfo : items) {
-            OrderItemEntity orderItem = new OrderItemEntity();
-            orderItem.setOrder(order);
-            orderItem.setCountryCode(request.getCountryCode());
-            orderItem.setStatus(OrderItemStatus.CREATED);
-            orderItem.setOrderItemId(order.getOrderId() + "-" + String.format("%03d", suffix++));
-            orderItem.setPskuCode(cartInfo.getPsku());
-            orderItem.setItemInfo(cartInfo);
-            orderItem.setSellerId(cartInfo.getSellerInfo().getSellerId());
-            orderItem.setOrderItemQuantity(cartInfo.getQuantity());
-            orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
-            orderItem.setBrandId(cartInfo.getBrandCode());
-            orderItem.setProductId(cartInfo.getSkus());
-            orderItem.setProductTitle(cartInfo.getGiftTitle());
-            orderItem.setProductBrand(cartInfo.getBrandCode());
-            orderItem.setProductFamily(cartInfo.getBrandName());
-            orderItem.setImages(cartInfo.getGiftImages());
-            orderItem.setParentSku(cartInfo.getPsku());
-            orderItem.setPrice(fetchItemPrice(cartInfo, userCartDTO));
-            orderItem.setTotalPrice(orderItem.getPrice().getTotalPrice());
-            orderItem.setCouponDetails(userCartDTO.getCouponDetails());
-            orderItem.setStatus(OrderItemStatus.CREATED);
-            orderItem.setExternalStatus(ExternalStatus.CREATED);
-            orderItems.add(orderItem);
+        for (var entry : itemsMap.entrySet()) {
+            int subSuffix = 1;
+            String childOrderId = order.getOrderId() + "-" + String.format("%03d", suffix++);
+            for(ItemInfo cartInfo :entry.getValue()){
+                String subChildOrderId = childOrderId+"-" + String.format("%03d", subSuffix++);
+                OrderItemEntity orderItem = new OrderItemEntity();
+                orderItem.setOrder(order);
+                orderItem.setCountryCode(request.getCountryCode());
+                orderItem.setStatus(OrderItemStatus.CREATED);
+                orderItem.setOrderItemId(order.getOrderId() + "-" + String.format("%03d", orderItemId++));
+                orderItem.setPskuCode(cartInfo.getPsku());
+                orderItem.setItemInfo(cartInfo);
+                orderItem.setChildOrderId(subChildOrderId);
+                orderItem.setSellerInfo(cartInfo.getSellerInfo());
+                orderItem.setSellerId(cartInfo.getSellerInfo().getSellerId());
+                orderItem.setOrderItemQuantity(cartInfo.getQuantity());
+                orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
+                orderItem.setBrandId(cartInfo.getBrandCode());
+                orderItem.setProductId(cartInfo.getSkus());
+                orderItem.setProductTitle(cartInfo.getGiftTitle());
+                orderItem.setProductBrand(cartInfo.getBrandCode());
+                orderItem.setProductFamily(cartInfo.getBrandName());
+                orderItem.setImages(cartInfo.getGiftImages());
+                orderItem.setParentSku(cartInfo.getPsku());
+                orderItem.setPrice(fetchItemPrice(cartInfo));
+                orderItem.setTotalPrice(orderItem.getPrice().getFinalPrice().multiply(cartInfo.getQuantity()));
+                orderItem.setCouponDetails(userCartDTO.getCouponDetails());
+                orderItem.setStatus(OrderItemStatus.CREATED);
+                orderItem.setExternalStatus(ExternalStatus.CREATED);
+                orderItem.setUpdatedBy(request.getUpdatedBy());
+                orderItems.add(orderItem);
+            }
         }
         List<OrderItemEntity> outOfStockItems = OrderUtils.validateStock(productDataResponse, orderItems);
         if (outOfStockItems.size() > 0) {
@@ -250,10 +267,11 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return OrderUtils.updatePriceFromCatalogService(productDataResponse, orderItems);
     }
 
-    private OrderPrice fetchItemPrice(ItemInfo cartInfo, UserCartDTO userCartDTO) {
-        OrderSummaryDTO orderSummary = userCartDTO.getOrderSummary();
+    private OrderPrice fetchItemPrice(ItemInfo cartInfo) {
         OrderPrice orderPrice = new OrderPrice();
-        orderPrice.setTotalPrice(cartInfo.getSalePrice().multiply(cartInfo.getQuantity()));
+        orderPrice.setTotalPrice(cartInfo.getOriginalPrice());
+        orderPrice.setFinalPrice(cartInfo.getSalePrice());
+        orderPrice.setTotalDiscount(cartInfo.getDiscountPercentage());
         orderPrice.setTotalShipping(cartInfo.getShippingPrice());
         return orderPrice;
     }

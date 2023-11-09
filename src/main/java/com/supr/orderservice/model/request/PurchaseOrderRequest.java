@@ -26,4 +26,5 @@ public class PurchaseOrderRequest implements Serializable {
     private String ipAddress;
     private boolean isScheduledOrder;
     private String scheduleDate;
+    private String updatedBy;
 }

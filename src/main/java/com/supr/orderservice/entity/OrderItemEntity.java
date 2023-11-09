@@ -49,6 +49,7 @@ public class OrderItemEntity extends OrderBaseEntity{
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "order_id")
     private OrderEntity order;
+    private String childOrderId;
 
     @Column(updatable = false)
     private String countryCode;
