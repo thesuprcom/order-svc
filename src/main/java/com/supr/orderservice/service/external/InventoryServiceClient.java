@@ -32,8 +32,7 @@ public interface InventoryServiceClient {
     void updateStoreItemStatus(@RequestHeader(STORE_ID_HEADER) String storeId, UpdateItemStatusRequest request);
 
     @GetMapping("/catalog/item-detail/{item-id}")
-    ItemInfo fetchItemDetails(@RequestHeader(STORE_ID_HEADER) String storeId,
-                              @PathVariable(name = "item-id") String pskuCode);
+    ItemInfo fetchItemDetails(@PathVariable(name = "item-id") String pskuCode);
 
     @GetMapping("/catalog/item-detail/{brand-id}/{total-amount}")
     List<ItemInfo> fetchItemDetailForSwap(@PathVariable(name = "sku") String sku,

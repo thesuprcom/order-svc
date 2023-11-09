@@ -137,7 +137,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         ItemInfo itemInfo;
         try {
             log.info("Calling inventory service to fetch details of item: {} for order: {}", itemId, orderId);
-            itemInfo = inventoryServiceClient.fetchItemDetails(orderEntity.getSellerId(), itemId);
+            itemInfo = inventoryServiceClient.fetchItemDetails(itemId);
         } catch (Exception e) {
             log.error("Unable to fetch the item details!!", e);
             throw new BadRequestException("Unable to fetch the item details!!");
@@ -333,7 +333,6 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
             BigDecimal extraPriceToBePaid = orderPrice.getTotalPrice().subtract(orderEntity.getTotalAmount());
             orderEntity.setReceiverTotalAmount(extraPriceToBePaid);
             orderPrice.setTotalPrice(extraPriceToBePaid);
-            orderPrice.setTotalOfferPrice(extraPriceToBePaid);
             orderEntity.setReceiverOrderPrice(orderPrice);
             orderEntity.setOrderItemEntities(availableOrderItem);
             orderRepository.save(orderEntity);

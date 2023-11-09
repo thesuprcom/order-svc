@@ -8,6 +8,7 @@ import com.supr.orderservice.model.CouponDetails;
 import com.supr.orderservice.model.ImageUrl;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
+import com.supr.orderservice.model.SellerInfo;
 import com.supr.orderservice.model.Shipping;
 import com.supr.orderservice.model.TrackingInfo;
 import com.supr.orderservice.utils.ApplicationUtils;
@@ -53,13 +54,11 @@ public class OrderItemEntity extends OrderBaseEntity{
     private String countryCode;
 
     private String brandId;
-
+    private String brandCode;
+    private String sellerId;
     private String pskuCode;
-
     private String productId;
-
     private String parentProductId;
-
     private String warranty;
     @Enumerated(EnumType.STRING)
     private OrderItemType orderItemType;
@@ -71,6 +70,13 @@ public class OrderItemEntity extends OrderBaseEntity{
     private String productFullTitle;
 
     private String productBrand;
+    @Type(type = "json")
+    @Column(columnDefinition = "json")
+    private List<ImageUrl> images;
+
+    @Type(type = "json")
+    @Column(columnDefinition = "json")
+    private SellerInfo sellerInfo;
 
     private String productDescription;
 
@@ -79,12 +85,6 @@ public class OrderItemEntity extends OrderBaseEntity{
     private String productSubtype;
 
     private String productType;
-
-    @Type(type = "json")
-    @Column(columnDefinition = "json")
-    private List<ImageUrl> images;
-
-    private String sellerId;
 
     private String parentSku;
 

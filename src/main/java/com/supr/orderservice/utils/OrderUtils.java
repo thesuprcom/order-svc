@@ -90,7 +90,7 @@ public class OrderUtils {
             orderItem.setSellerId(orderItem.getSellerId());
             orderItem.setPrice(cartInfo.getItemPriceDetails());
             orderItem.setOrderItemQuantity(cartInfo.getQuantity());
-            orderItem.setSellerId(order.getSellerId());
+            orderItem.setSellerId(cartInfo.getSellerId());
             orderItem.setBrandId(cartInfo.getBrandCode());
             orderItem.setProductId(cartInfo.getPsku());
             orderItem.setPartnerSku(cartInfo.getSkus());
@@ -118,40 +118,31 @@ public class OrderUtils {
     }
 
     public static OrderPrice reCalculatePrice(List<OrderItemEntity> orderItems) {
-        BigDecimal totalMrp = new BigDecimal(0);
         BigDecimal totalPrice = new BigDecimal(0);
-        BigDecimal totalOfferPrice = new BigDecimal(0);
-        BigDecimal totalDiscount = new BigDecimal(0);
-        BigDecimal totalShipping = new BigDecimal(0);
-        BigDecimal totalVat = new BigDecimal(0);
-        BigDecimal totalCommission = new BigDecimal(0);
-        BigDecimal totalBufferAmount = new BigDecimal(0);
-        BigDecimal totalCouponDiscount = new BigDecimal(0);
-        BigDecimal totalMerchantCouponDiscount = new BigDecimal(0);
+        BigDecimal totalWalletPrice= new BigDecimal(0);
+        BigDecimal finalPrice= new BigDecimal(0);
+        BigDecimal totalTax= new BigDecimal(0);
+        BigDecimal totalDiscount= new BigDecimal(0);
+        BigDecimal totalCouponDiscount= new BigDecimal(0);
+        BigDecimal totalShipping= new BigDecimal(0);
+
         for (OrderItemEntity orderItem : orderItems) {
             OrderPrice orderPrice = orderItem.getPrice();
-            totalMrp = totalMrp.add(orderPrice.getTotalMrp());
+            totalWalletPrice = totalWalletPrice.add(orderPrice.getTotalWalletPrice());
             totalPrice = totalPrice.add(orderPrice.getTotalPrice());
-            totalOfferPrice = totalOfferPrice.add(orderPrice.getTotalOfferPrice());
+            finalPrice = finalPrice.add(orderPrice.getFinalPrice());
             totalDiscount = totalDiscount.add(orderPrice.getTotalDiscount());
             totalShipping = totalShipping.add(orderPrice.getTotalShipping());
-            totalVat = totalVat.add(orderPrice.getTotalVat());
-            totalCommission = totalCommission.add(orderPrice.getTotalCommission());
-            totalBufferAmount = totalBufferAmount.add(orderPrice.getTotalBufferAmount());
-            totalCouponDiscount = totalCouponDiscount.add(orderPrice.getTotalCouponDiscount());
-            totalMerchantCouponDiscount = totalMerchantCouponDiscount.add(orderPrice.getTotalMerchantCouponDiscount());
+            totalTax = totalTax.add(orderPrice.getTotalTax());
         }
         OrderPrice orderPrice = new OrderPrice();
-        orderPrice.setTotalMrp(totalMrp);
         orderPrice.setTotalPrice(totalPrice);
-        orderPrice.setTotalOfferPrice(totalOfferPrice);
+        orderPrice.setFinalPrice(finalPrice);
+        orderPrice.setTotalWalletPrice(totalWalletPrice);
         orderPrice.setTotalDiscount(totalDiscount);
         orderPrice.setTotalShipping(totalShipping);
-        orderPrice.setTotalVat(totalVat);
-        orderPrice.setTotalCommission(totalCommission);
-        orderPrice.setTotalBufferAmount(totalBufferAmount);
+        orderPrice.setTotalTax(totalTax);
         orderPrice.setTotalCouponDiscount(totalCouponDiscount);
-        orderPrice.setTotalMerchantCouponDiscount(totalMerchantCouponDiscount);
         return orderPrice;
     }
 
@@ -182,7 +173,7 @@ public class OrderUtils {
         return ReceiverPlaceOrderResponse.builder().items(fetchItemInfos(orderItems))
                 .shouldTriggerReceiverPayment(shouldTriggerReceiverPayment)
                 .subTotalAmount(fetchSwappedAmount(order))
-                .vat(order.getPrice().getTotalVat().toString())
+                .vat(order.getPrice().getTotalTax().toString())
                 .swappedProductAmount(fetchSwappedAmount(order))
                 .totalPrice(fetchTotalPrice(order)).build();
     }
@@ -265,7 +256,7 @@ public class OrderUtils {
 
     private static OrderPrice fetchOrderItemPrice(OrderPrice price, Misc misc) {
         price.setTotalPrice(misc.getSalePrice().setScale(2, RoundingMode.HALF_UP));
-        price.setTotalVat(misc.getVatRate().setScale(2, RoundingMode.HALF_UP));
+        price.setTotalTax(misc.getVatRate().setScale(2, RoundingMode.HALF_UP));
         price.setTotalPrice(misc.getSalePrice().setScale(2, RoundingMode.HALF_UP));
         price.setTotalShipping(misc.getShippingChargeExVat().setScale(2, RoundingMode.HALF_UP));
         return price;

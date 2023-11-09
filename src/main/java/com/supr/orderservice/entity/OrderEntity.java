@@ -59,7 +59,6 @@ import static javax.persistence.CascadeType.REFRESH;
 @Table(name = "user_orders")
 @AllArgsConstructor
 public class OrderEntity extends OrderBaseEntity {
-    private String sellerId;
     @NaturalId
     private String orderId;
     @Column(updatable = false)
@@ -107,9 +106,7 @@ public class OrderEntity extends OrderBaseEntity {
     @Type(type = "json")
     @Column(name = "billing_address", columnDefinition = "json")
     private Address billingAddress;
-    @Type(type = "json")
-    @Column(columnDefinition = "json")
-    private SellerInfo sellerInfo;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "order_type")
     private OrderType orderType;
@@ -144,13 +141,12 @@ public class OrderEntity extends OrderBaseEntity {
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY, cascade = {PERSIST, MERGE, REFRESH, DETACH})
     private OrderEntity referenceOrder;
+    @NotAudited
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private CouponDetails couponDetails;
     @Audited
     private Timestamp orderPlacedTime;
-    @Column(name = "subscription_pending")
-    private boolean subscriptionPending;
     @Column(name = "payment_authorization_failed_count")
     private int paymentAuthorizationFailedCount;
     @Setter(AccessLevel.PRIVATE)

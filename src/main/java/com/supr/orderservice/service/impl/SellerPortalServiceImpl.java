@@ -59,8 +59,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         LocalDate startDate = LocalDate.now().minusDays(days);
         LocalDate endDate = LocalDate.now();
         List<Object[]> orderCountList = orderRepository.
-                getOrderCountByStatusAndCountryCodeAndSellerIdAndDateGroupByStatus(externalStatuses, countryCode,
-                        sellerId, startDate);
+                getOrderCountByStatusAndCountryCodeAndSellerIdAndDateGroupByStatus(externalStatuses, countryCode, startDate);
         List<OrderCount> orderCounts = new ArrayList<>();
         long totalOrderCount = 0;
         for (Object[] result : orderCountList) {
@@ -71,7 +70,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         }
         Page<OrderEntity> orderEntities = orderRepository.
                 findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(ExternalStatus.PLACED,
-                        countryCode, sellerId, startDate, endDate, pageable);
+                        countryCode, startDate, endDate, pageable);
         List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
         long totalOrderItems = portalOrderDetails.stream()
                 .mapToInt(customObject -> customObject.getItemInfos().size()).sum();
@@ -210,8 +209,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         }
         if (request.getStatus() != null) {
             List<OrderEntity> orderEntities =
-                    orderRepository.findByStatusAndSellerId(OrderUtils.fetchExternalStatus(request.getStatus()),
-                            request.getSellerId());
+                    orderRepository.findByStatus(OrderUtils.fetchExternalStatus(request.getStatus()));
             List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
             response.setOrderDetails(portalOrderDetails);
             return response;

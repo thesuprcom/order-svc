@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class PriceDetails implements Serializable {
     BigDecimal totalPrice;
+    BigDecimal totalWalletPrice;
+    BigDecimal finalPrice;
     BigDecimal totalTax;
     BigDecimal totalDiscount;
     BigDecimal totalCouponDiscount;

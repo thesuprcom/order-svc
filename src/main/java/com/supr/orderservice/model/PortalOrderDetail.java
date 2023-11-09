@@ -34,7 +34,6 @@ public class PortalOrderDetail {
 
     public PortalOrderDetail(OrderEntity order){
         this.orderId = order.getOrderId();
-        this.sellerId = order.getSellerId();
         this.countryCode = order.getCountryCode();
         this.currencyCode = order.getCurrencyCode();
         this.orderDate = order.getCreatedAt();

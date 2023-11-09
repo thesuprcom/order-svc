@@ -64,7 +64,6 @@ public class TransactionServiceImpl implements TransactionService {
 
         switch (paymentMode) {
             case Card:
-                validateExistingSubscription(order);
                 return buildPaymentProcessingResponse(order.getOrderId());
         }
         throw createOrderServiceException(ErrorEnum.INVALID_PAYMENT_MODE);

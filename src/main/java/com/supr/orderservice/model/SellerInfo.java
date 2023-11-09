@@ -13,22 +13,16 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class SellerInfo implements Serializable {
-    private String brandId;
-    private String storeId;
-    private String storeAccountNumber;
+    private String sellerId;
     private String city;
+    private String countryName;
+    private String sellerAccountNumber;
     private String status;
-    private String country;
-    private String brandName;
-    private String storeName;
-    private String companyLegalName;
-    private String companyPhoneNo;
-    private String sellerType;
-    private String sellerAddress;
-    private String sellerCurrency;
-    private String taxRegistrationNumber;
-    private String area;
-    private List<String> images;
+    private String sellerName;
     private String countryCode;
-    private String estimatedDeliveryTime;
+    private String currencyCode;
+    private String sellerAddress;
+    private String sellerLegalName;
+    private String sellerPhoneNo;
+
 }

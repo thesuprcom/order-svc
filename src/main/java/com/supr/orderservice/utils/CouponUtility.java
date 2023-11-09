@@ -42,7 +42,7 @@ public class CouponUtility {
   private CouponOrderItem buildCouponOrderItem(final OrderItemEntity orderItemVO) {
     return CouponOrderItem.builder().id(orderItemVO.getOrderItemId())
         .quantity(orderItemVO.getOrderItemQuantity())
-        .salePricePerUnit(orderItemVO.getPrice().getTotalOfferPrice()).build();
+        .salePricePerUnit(orderItemVO.getPrice().getFinalPrice()).build();
   }
 
   public boolean isCouponAppliedToOrder(final CouponDetails couponDetails) {

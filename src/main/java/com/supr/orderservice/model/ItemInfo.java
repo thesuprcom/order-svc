@@ -32,6 +32,7 @@ public class ItemInfo implements Serializable {
     private String sellerId;
     private BigDecimal salePrice;
     private String giftTitle;
+    private SellerInfo sellerInfo;
     @NotNull
     private BigDecimal quantity;
     private String giftCategory;

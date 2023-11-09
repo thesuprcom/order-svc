@@ -8,10 +8,8 @@ import com.supr.orderservice.entity.TransactionEntity;
 import com.supr.orderservice.enums.CouponInventoryOperationType;
 import com.supr.orderservice.enums.ErrorEnum;
 import com.supr.orderservice.enums.ExternalStatus;
-import com.supr.orderservice.enums.GiftSentOption;
 import com.supr.orderservice.enums.GreetingCardStatus;
 import com.supr.orderservice.enums.OrderChangeEvent;
-import com.supr.orderservice.enums.OrderItemEvent;
 import com.supr.orderservice.enums.OrderItemStatus;
 import com.supr.orderservice.enums.OrderType;
 import com.supr.orderservice.enums.PaymentMode;
@@ -33,9 +31,7 @@ import com.supr.orderservice.model.request.ProcessPaymentRequest;
 import com.supr.orderservice.model.request.PurchaseOrderRequest;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
 import com.supr.orderservice.model.response.PaymentProcessingResponse;
-import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.PurchaseOrderResponse;
-import com.supr.orderservice.model.response.SellerSkuResponse;
 import com.supr.orderservice.repository.CardDetailsRepository;
 import com.supr.orderservice.repository.GreetingCardRepository;
 import com.supr.orderservice.repository.OrderItemRepository;
@@ -146,9 +142,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         OrderPrice orderPrice = fetchOrderPrice(request);
         order.setTotalAmount(ApplicationUtils.roundUpToTwoDecimalPlaces(getPayableAmount(orderPrice)));
         order.setPrice(orderPrice);
-        order.setSellerId(userCartDTO.getSellerInfo().getStoreId());
         order.setUserId(userCartDTO.getUserId());
-        order.setSellerInfo(userCartDTO.getSellerInfo());
         order.setSender(userCartDTO.getSender());
         order.setIpAddress(request.getIpAddress());
         order.setCouponDetails(userCartDTO.getCouponDetails());
@@ -163,7 +157,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         OrderPrice orderPrice = new OrderPrice();
         orderPrice.setTotalPrice(request.getUserCartDTO().getPriceDetails().getTotalPrice());
         orderPrice.setTotalShipping(request.getUserCartDTO().getPriceDetails().getTotalShipping());
-        orderPrice.setTotalVat(request.getUserCartDTO().getPriceDetails().getTotalTax());
+        orderPrice.setTotalTax(request.getUserCartDTO().getPriceDetails().getTotalTax());
         return orderPrice;
     }
 
@@ -232,10 +226,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             orderItem.setOrderItemId(order.getOrderId() + "-" + String.format("%03d", suffix++));
             orderItem.setPskuCode(cartInfo.getPsku());
             orderItem.setItemInfo(cartInfo);
-            orderItem.setSellerId(userCartDTO.getSellerInfo().getStoreId());
+            orderItem.setSellerId(cartInfo.getSellerInfo().getSellerId());
             orderItem.setOrderItemQuantity(cartInfo.getQuantity());
             orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
-            orderItem.setBrandId(request.getUserCartDTO().getSellerInfo().getBrandId());
             orderItem.setBrandId(cartInfo.getBrandCode());
             orderItem.setProductId(cartInfo.getSkus());
             orderItem.setProductTitle(cartInfo.getGiftTitle());
@@ -292,7 +285,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
     private void performActionPostPaymentAuthorization(final OrderEntity order, PaymentMode paymentMode,
                                                        String stateMachineType, String orderChangeEvent) {
-        order.setSubscriptionPending(false);
         order.setPaymentMode(paymentMode);
         orderService.changeOrderState(order, stateMachineType, orderChangeEvent, true,
                 StateChangeReason.PAYMENT_AUTHORIZATION_SUCCESSFULLY.getReason());

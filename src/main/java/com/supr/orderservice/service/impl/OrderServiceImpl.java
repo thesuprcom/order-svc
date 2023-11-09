@@ -133,7 +133,7 @@ public class OrderServiceImpl implements OrderService {
                         orderItem.getOrderItemStatusHistories().add(vo);
                         if (ApplicationUtils.isAccountingStatus(orderItem.getStatus())) {
                             accountingOrderItemDetailsList.add(AccountingOrderItemEntity.builder()
-                                    .storeId(order.getSellerId())
+                                    .storeId(orderItem.getSellerId())
                                     .orderId(order.getOrderId())
                                     .shippingFee(null != order.getPrice() ? order.getPrice().getTotalShipping() : null)
                                     .orderItemId(orderItem.getOrderItemId())
@@ -142,7 +142,7 @@ public class OrderServiceImpl implements OrderService {
                                     .quantity(orderItem.getMerchantAcceptedQuantity())
                                     .externalStatus(orderItem.getExternalStatus())
                                     .country(orderItem.getOrder().getShippingAddress().getCountry())
-                                    .city(orderItem.getOrder().getSellerInfo().getCity())
+                                    .city(orderItem.getSellerInfo().getCity())
                                     .orderDate(orderItem.getOrder().getOrderPlacedTime())
                                     .nnOrderId(orderItem.getOrder().getId())
                                     .cancellationReason(orderItem.getCancellationReason())

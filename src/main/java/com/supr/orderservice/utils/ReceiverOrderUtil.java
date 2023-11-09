@@ -20,8 +20,6 @@ public class ReceiverOrderUtil {
         order.setCountryCode(senderOrder.getCountryCode());
         order.setCurrencyCode(senderOrder.getCurrencyCode());
         order.setGiftSentOption(senderOrder.getGiftSentOption());
-        order.setSellerId(senderOrder.getSellerId());
-        order.setSellerInfo(senderOrder.getSellerInfo());
         order.setSender(senderOrder.getSender());
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         order.setOrderItemEntities(senderOrder.getOrderItemEntities());
