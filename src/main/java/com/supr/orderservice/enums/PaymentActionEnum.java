@@ -8,6 +8,10 @@ import lombok.Getter;
 public enum PaymentActionEnum {
     AUTHORIZE("AUTHORIZE", "AUTHORIZED", TransactionStatus.AUTHORIZED, TransactionStatus.FAILED_TO_AUTHORIZE,
             TransactionType.DEBIT),
+    CREATE_PAYMENT_LINK("CREATE_PAYMENT_LINK", "CREATE_PAYMENT_LINK", TransactionStatus.CREATE_PAYMENT_LINK, TransactionStatus.FAILED_TO_CREATE_PAYMENT_LINK,
+            TransactionType.DEBIT),
+    CREATE_SAVED_CARD_PAYMENT_LINK("CREATE_SAVED_CARD_PAYMENT_LINK", "CREATE_SAVED_CARD_PAYMENT_LINK", TransactionStatus.CREATE_SAVED_CARD_PAYMENT_LINK,
+            TransactionStatus.FAILED_TO_CREATE_SAVED_CARD_PAYMENT_LINK,TransactionType.DEBIT),
     CAPTURE("CAPTURE", "CAPTURED", TransactionStatus.SUCCESSFUL, TransactionStatus.FAILED_TO_CAPTURE,
             TransactionType.DEBIT),
     REVERSE("REVERSE", "REVERSED", TransactionStatus.REVERSED, TransactionStatus.FAILED_TO_REVERSE,

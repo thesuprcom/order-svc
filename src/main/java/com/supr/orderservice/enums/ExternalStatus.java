@@ -1,6 +1,7 @@
 package com.supr.orderservice.enums;
 
 public enum ExternalStatus {
+    ANY,
     CREATED,
     PLACED,
     FAILED,

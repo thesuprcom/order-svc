@@ -6,8 +6,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public enum StateChangeReason {
-  PAYMENT_AUTHORIZATION_FAILED("Payment Failed"),
-  PAYMENT_AUTHORIZATION_SUCCESSFULLY("Payment Successful");
+  PAYMENT_LINK_CREATED_FAILED("Payment link creation Failed"),
+  PAYMENT_LINK_CREATED_SUCCESSFULLY("Payment link created successfully"),
+  ORDER_PLACED("Order placed");
 
   private final String reason;
 }

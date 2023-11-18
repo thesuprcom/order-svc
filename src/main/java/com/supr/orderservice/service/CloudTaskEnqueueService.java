@@ -34,7 +34,6 @@ import static com.supr.orderservice.utils.Constants.RETRY_AUTHORIZE_PAYMENT_TASK
 import static com.supr.orderservice.utils.Constants.SCHEDULED_CANCEL_USER_ORDER_TASK_NAME_PREFIX;
 import static com.supr.orderservice.utils.Constants.SCHEDULE_AFTER_TEN_SECONDS;
 import static com.supr.orderservice.utils.Constants.SCHEDULE_AFTER_ZERO_SECOND;
-import static com.supr.orderservice.utils.SubscriptionUtils.createAuthHeadersForCloudTask;
 
 @Slf4j
 @Service
@@ -206,7 +205,7 @@ public class CloudTaskEnqueueService {
     return CloudTaskRequest.builder()
         .taskName(taskName)
         .url(apiPath)
-        .headers(createAuthHeadersForCloudTask(accessToken, userId))
+        .headers(null)
         .httpMethod(POST)
         .scheduleAfter(scheduleAfter)
         .body(body)

@@ -3,6 +3,7 @@ package com.supr.orderservice.enums;
 public enum OrderChangeEvent {
     SENDER_ORDER_CHECKOUT,
     SENDER_PLACE_ORDER,
+    SENDER_PAYMENT_LINK_CREATED,
     RECEIVER_CLICKED_GIFT,
     RECEIVER_RECEIVED_GIFT,
     RECEIVER_OPEN_GIFT,

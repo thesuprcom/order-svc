@@ -113,7 +113,8 @@ public enum ErrorEnum {
   NO_FUTURE_ORDERS_FOUND("ERR_ORDER_75", "Future orders not found:"),
   SAME_SLOT_RESCHEDULE("ERR_ORDER_76", "can not reschedule to the same slot"),
   PLACE_SLOTTED_TYPE_ORDER("ERR_ORDER_77", "please place/reschedule only SLOTTED orders"),
-  SLOT_NULL("ERR_ORDER_78", "slot can not be null for slotted order");
+  SLOT_NULL("ERR_ORDER_78", "slot can not be null for slotted order"),
+  PAYMENT_GATEWAY_ERROR("ERR_ORDER_79", "Something went wrong while processing payment. Please retry");
 
   private final String errorCode;
   private final String errorMessage;

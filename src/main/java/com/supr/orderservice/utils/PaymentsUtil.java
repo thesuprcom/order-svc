@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -60,7 +61,7 @@ public class PaymentsUtil {
    * @param noonResponse The response from noon payments
    */
   public void trySavePaymentGatewayTransaction(OrderEntity order, PaymentGatewayResponse noonResponse) {
-    PaymentOrderResponse paymentGatewayOrder = noonResponse.getResult().getOrder();
+    PaymentOrderResponse paymentGatewayOrder = null;
     final String orderStatus = paymentGatewayOrder.getStatus();
 
     if (!paymentDetailsRepository
@@ -73,11 +74,6 @@ public class PaymentsUtil {
       paymentDetailsEntity.setPaymentOrderStatus(orderStatus);
       paymentDetailsEntity.setErrorMessage(paymentGatewayOrder.getErrorMessage());
 
-      Optional.ofNullable(noonResponse.getResult().getPaymentDetails()).ifPresent(paymentDetails -> {
-        paymentDetailsEntity.setPaymentMethod(paymentDetails.getMode());
-        paymentDetailsEntity.setCardCountry(paymentDetails.getCardCountry());
-        paymentDetailsEntity.setCardBrand(paymentDetails.getBrand());
-      });
 
       getPaymentGatewayTransaction(noonResponse).ifPresent(transaction -> {
         paymentDetailsEntity.setTransactionId(transaction.getId());
@@ -92,19 +88,13 @@ public class PaymentsUtil {
     }
   }
 
-  public boolean isPaymentAuthorized(final PaymentGatewayResponse response) {
-    return Optional.ofNullable(response.getResult())
-        .map(result -> Optional.ofNullable(result.getOrder())
-            .map(order -> order.getStatus().equalsIgnoreCase(PaymentActionEnum.AUTHORIZE.getResponseOrderStatus()))
-            .orElse(false))
-        .orElse(false);
-  }
+
 
   private Optional<PaymentGatewayTransaction> getPaymentGatewayTransaction(PaymentGatewayResponse noonResponse) {
-    PaymentGatewayTransaction transaction = noonResponse.getResult().getTransaction();
+    PaymentGatewayTransaction transaction = null;
 
     if (transaction == null) {
-      List<PaymentGatewayTransaction> transactions = noonResponse.getResult().getTransactions();
+      List<PaymentGatewayTransaction> transactions = new ArrayList<>();
       if (isPaymentGatewayTransactionDetailsAvailable(transactions)) {
         transaction = getRecentTransaction(transactions);
       }

@@ -38,4 +38,8 @@ public interface PaymentGatewayService {
   PaymentGatewayResponse refundPayment(OrderEntity order);
 
   PaymentGatewayResponse partialRefundPayment(OrderEntity order);
+
+  PaymentGatewayResponse createPaymentLink(OrderEntity order);
+
+  PaymentGatewayResponse createSavedCardPaymentLink(OrderEntity order);
 }

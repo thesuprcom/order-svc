@@ -1,6 +1,7 @@
 package com.supr.orderservice.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.supr.orderservice.enums.GiftSentOption;
 import com.supr.orderservice.enums.LogisticsCarrierStatus;
 import com.supr.orderservice.enums.OrderType;
@@ -147,36 +148,13 @@ public class OrderEntity extends OrderBaseEntity {
     private CouponDetails couponDetails;
     @Audited
     private Timestamp orderPlacedTime;
-    @Column(name = "payment_authorization_failed_count")
-    private int paymentAuthorizationFailedCount;
-    @Setter(AccessLevel.PRIVATE)
-    @Column(name = "payment_authorization_failed_timestamp")
-    private Timestamp paymentAuthorizationFailedTimestamp;
     @Column(name = "package_count")
     private Integer packageCount;
     private String updatedBy;
     @Transient
     private DeliveryFeeInfo deliveryFeeInfo;
+    private BigDecimal walletAmount;
+    @JsonProperty("is_wallet_applied")
+    private boolean isWalletApplied;
 
-    private void setPaymentAuthorizationFailedCount(int count) {
-        this.paymentAuthorizationFailedCount = count;
-
-        if (count > 0) {
-            this.setPaymentAuthorizationFailedTimestamp(new Timestamp(Calendar.getInstance().getTime().getTime()));
-        }
-    }
-
-    public void decrementPaymentAuthorizationFailedCount(final CardDetailsUtility cardDetailsUtility) {
-        this.setPaymentAuthorizationFailedCount(Math.max(0, this.getPaymentAuthorizationFailedCount() - 1));
-        cardDetailsUtility.removeOrderIdFromPaymentPendingOrder(this.userId, this.orderId);
-    }
-
-    public void incrementPaymentAuthorizationFailedCount(final CardDetailsUtility cardDetailsUtility) {
-        this.setPaymentAuthorizationFailedCount(this.getPaymentAuthorizationFailedCount() + 1);
-        cardDetailsUtility.unlockForNewSubscription(userId);
-    }
-
-    public boolean isAuthorizationFailedForOrder() {
-        return this.getPaymentAuthorizationFailedCount() > 0;
-    }
 }

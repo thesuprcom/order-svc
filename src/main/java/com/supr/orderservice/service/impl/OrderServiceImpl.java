@@ -164,12 +164,6 @@ public class OrderServiceImpl implements OrderService {
         updateUserDetailsForOrder(historyVO);
 
         order.getOrderItemStatusHistories().add(historyVO);
-
-        // Because, for RTO case, refund has already happened at cancel_by_logistics event.
-        if (!previousOrderStatus.equals(OrderItemStatus.RTO_CREATED)) {
-            transactionService.processPayment(order);
-        }
-
     }
 
     @Override

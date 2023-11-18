@@ -15,6 +15,7 @@ import com.supr.orderservice.enums.TransactionType;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.exception.PaymentProcessingException;
 import com.supr.orderservice.model.PaymentProcessingResult;
+import com.supr.orderservice.model.pg.response.MamoPayPaymentLinkResponse;
 import com.supr.orderservice.model.request.PaymentRequest;
 import com.supr.orderservice.model.request.ProcessPaymentRequest;
 import com.supr.orderservice.model.response.PaymentGatewayResponse;
@@ -64,7 +65,14 @@ public class TransactionServiceImpl implements TransactionService {
 
         switch (paymentMode) {
             case Card:
-                return buildPaymentProcessingResponse(order.getOrderId());
+                if (request.getCardData() != null && request.getCardData().getTokenIdentifier() != null
+                        && request.getCardData().getNumberEncrypted() != null) {
+                    transaction = processPayment(order, PaymentActionEnum.CREATE_SAVED_CARD_PAYMENT_LINK);
+                } else {
+                    transaction = processPayment(order, PaymentActionEnum.CREATE_PAYMENT_LINK);
+                }
+                order.setTransaction(transaction);
+                return buildPaymentProcessingResponse(order.getOrderId(), transaction);
         }
         throw createOrderServiceException(ErrorEnum.INVALID_PAYMENT_MODE);
     }
@@ -94,11 +102,10 @@ public class TransactionServiceImpl implements TransactionService {
             PaymentGatewayResponse response = responseOptional.get();
             log.info("Payment gateway response: {}", response);
 
-            if (!(response.getResultCode() == 0 &&
-                    transaction.getPgOrderId().equals(response.getResult().getOrder().getId()) &&
-                    paymentActionEnum.getResponseOrderStatus().equalsIgnoreCase(response.getResult().getOrder().getStatus()))) {
+            if (response.getResponse().getFailureReturnUrl() != null) {
                 transaction.setStatus(paymentActionEnum.getFailedTransactionStatus());
             }
+            transaction.setPaymentGatewayResponse(response);
         } else {
             transaction.setStatus(paymentActionEnum.getFailedTransactionStatus());
         }
@@ -107,6 +114,7 @@ public class TransactionServiceImpl implements TransactionService {
         if (transaction.getStatus() == paymentActionEnum.getFailedTransactionStatus()) {
             throw new OrderServiceException(ErrorEnum.TRANSACTION_FAILED);
         }
+
 
         return transaction;
     }
@@ -156,15 +164,27 @@ public class TransactionServiceImpl implements TransactionService {
 
     }
 
-    private PaymentProcessingResponse buildPaymentProcessingResponse(final String orderId) {
+    private PaymentProcessingResponse buildPaymentProcessingResponse(final String orderId, TransactionEntity transaction) {
+        MamoPayPaymentLinkResponse paymentLinkResponse = transaction.getPaymentGatewayResponse().getResponse();
+        String redirectUrl = null;
+        PaymentStatus paymentStatus = null;
+        if (paymentLinkResponse.getPaymentUrl() != null) {
+            redirectUrl = paymentLinkResponse.getPaymentUrl();
+            paymentStatus = PaymentStatus.INITIATED;
+        }
+        if (paymentLinkResponse.getFailureReturnUrl() != null) {
+            redirectUrl = paymentLinkResponse.getFailureReturnUrl();
+            paymentStatus = PaymentStatus.FAILED;
+        }
         return PaymentProcessingResponse.builder()
                 .orderId(orderId)
-                .paymentProcessingResult(buildPaymentProcessingResult(PaymentStatus.AUTHORIZED))
+                .redirectUrl(redirectUrl)
+                .paymentProcessingResult(buildPaymentProcessingResult(paymentStatus))
                 .build();
     }
 
     private PaymentProcessingResult buildPaymentProcessingResult(final PaymentStatus paymentStatus) {
-        return PaymentProcessingResult.builder().subscriptionStatus(paymentStatus).build();
+        return PaymentProcessingResult.builder().paymentStatus(paymentStatus).build();
     }
 
     private BigDecimal getAmountPayable(OrderEntity order) {
@@ -173,7 +193,7 @@ public class TransactionServiceImpl implements TransactionService {
 
     public PaymentOrderResponse getPaymentServiceResponse(OrderEntity order) {
         final PaymentGatewayResponse paymentGatewayResponse = pgService.enquireGateway(order);
-        return paymentGatewayResponse.getResult().getOrder();
+        return null;
     }
 
     public void enqueueAuthorizePaymentRequest(final OrderEntity order, NextAction action) {
@@ -221,6 +241,11 @@ public class TransactionServiceImpl implements TransactionService {
 
     private Optional<PaymentGatewayResponse> callPaymentGateway(OrderEntity order, PaymentActionEnum paymentActionEnum) {
         switch (paymentActionEnum) {
+            case CREATE_PAYMENT_LINK:
+                return Optional.of(pgService.createPaymentLink(order));
+
+            case CREATE_SAVED_CARD_PAYMENT_LINK:
+                return Optional.of(pgService.createSavedCardPaymentLink(order));
             case REVERSE:
                 return Optional.of(pgService.reversePayment(order));
 

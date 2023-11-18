@@ -13,6 +13,7 @@ import com.supr.orderservice.enums.OrderChangeEvent;
 import com.supr.orderservice.enums.OrderItemStatus;
 import com.supr.orderservice.enums.OrderType;
 import com.supr.orderservice.enums.PaymentMode;
+import com.supr.orderservice.enums.PaymentStatus;
 import com.supr.orderservice.enums.StateChangeReason;
 import com.supr.orderservice.enums.StateMachineType;
 import com.supr.orderservice.enums.TransactionStatus;
@@ -53,6 +54,7 @@ import com.supr.orderservice.utils.CardDetailsUtility;
 import com.supr.orderservice.utils.CouponUtility;
 import com.supr.orderservice.utils.DateUtils;
 import com.supr.orderservice.utils.OrderUtils;
+import com.supr.orderservice.utils.StateMachineUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -73,6 +75,7 @@ import static com.supr.orderservice.utils.DateUtils.getScheduledTimestamp;
 public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private final OrderItemRepository orderItemRepository;
     private final OrderService orderService;
+    private final StateMachineUtils stateMachineUtils;
     private final OrderItemService orderItemService;
     private final CartServiceClient cartServiceClient;
     private final TransactionService transactionService;
@@ -103,6 +106,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 order.setOrderScheduled(true);
                 order.setScheduledDate(getScheduledTimestamp(request.getScheduleDate()));
             }
+            stateMachineUtils.changeOrderAndOrderItemStatus(order, StateMachineType.SENDER.name(),
+                    OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
+
             order = orderService.save(order);
             SavedCardDetails savedCardDetails = paymentGatewayService.paymentDetails(order.getUserId());
             PurchaseOrderResponse response = new PurchaseOrderResponse();
@@ -120,16 +126,43 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     @Override
     public PaymentProcessingResponse placeOrder(ProcessPaymentRequest request) {
         OrderEntity order = senderOrderService.fetchOrder(request.getOrderId());
-        PaymentProcessingResponse processTransactionResponse = transactionService.processTransaction(order, request);
-        performPostPaymentAuthActionAndUpdateItemQuantity(request, order, StateMachineType.SENDER.name()
-                , OrderChangeEvent.SENDER_PLACE_ORDER.name());
-        return processTransactionResponse;
+        order = reCalOrder(request, order);
+        PaymentProcessingResponse pgResponse = transactionService.processTransaction(order, request);
+        if (pgResponse.getPaymentProcessingResult().getPaymentStatus() == PaymentStatus.INITIATED) {
+            performPostPaymentAuthActionAndUpdateItemQuantity(request, order, StateMachineType.SENDER.name()
+                    , OrderChangeEvent.SENDER_PAYMENT_LINK_CREATED.name());
+        } else {
+            orderService.changeOrderState(order, StateMachineType.SENDER.name(), OrderChangeEvent.SENDER_PLACE_ORDER.name(),
+                    true, StateChangeReason.PAYMENT_LINK_CREATED_FAILED.getReason());
+        }
+        return pgResponse;
+    }
+
+    private OrderEntity reCalOrder(ProcessPaymentRequest request, OrderEntity order) {
+        order.setWalletApplied(request.getIsWalletApplied());
+        OrderPrice orderPrice = order.getPrice();
+        orderPrice.setFinalPrice(request.getPriceDetails().getFinalPrice());
+        orderPrice.setTotalWalletPrice(request.getPriceDetails().getTotalWalletPrice());
+        orderPrice.setTotalShipping(request.getPriceDetails().getTotalShipping());
+        orderPrice.setTotalPrice(request.getPriceDetails().getTotalPrice());
+        order.setPrice(orderPrice);
+        order.setWalletAmount(request.getAppliedWalletAmount());
+        order.setBillingAddress(request.getBillingAddress());
+        order.setTotalAmount(request.getPriceDetails().getFinalPrice());
+        TransactionEntity transaction = order.getTransaction();
+        transaction.setAmount(order.getTotalAmount());
+        transaction.setAmountPayable(order.getTotalAmount());
+        transaction.setPaymentModeSelected(request.getPaymentModeSelected() == null ? PaymentMode.Card : request.getPaymentModeSelected());
+
+        orderService.changeOrderState(order, StateMachineType.SENDER.name(), OrderChangeEvent.SENDER_PLACE_ORDER.name(),
+                true, StateChangeReason.ORDER_PLACED.getReason());
+
+        order.setTransaction(transaction);
+        return orderService.save(order);
     }
 
     private OrderEntity createOrderEntity(PurchaseOrderRequest request) {
         OrderEntity order = createOrder(request.getOrderId());
-        order.setStatus(OrderItemStatus.ANY);
-
         UserCartDTO userCartDTO = request.getUserCartDTO();
         order.setReceiverEmail(userCartDTO.getReceiverEmail());
         order.setReceiverPhone(userCartDTO.getReceiverPhone());
@@ -230,8 +263,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         for (var entry : itemsMap.entrySet()) {
             int subSuffix = 1;
             String childOrderId = order.getOrderId() + "-" + String.format("%03d", suffix++);
-            for(ItemInfo cartInfo :entry.getValue()){
-                String subChildOrderId = childOrderId+"-" + String.format("%03d", subSuffix++);
+            for (ItemInfo cartInfo : entry.getValue()) {
+                String subChildOrderId = childOrderId + "-" + String.format("%03d", subSuffix++);
                 OrderItemEntity orderItem = new OrderItemEntity();
                 orderItem.setOrder(order);
                 orderItem.setCountryCode(request.getCountryCode());
@@ -305,13 +338,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                                                        String stateMachineType, String orderChangeEvent) {
         order.setPaymentMode(paymentMode);
         orderService.changeOrderState(order, stateMachineType, orderChangeEvent, true,
-                StateChangeReason.PAYMENT_AUTHORIZATION_SUCCESSFULLY.getReason());
+                StateChangeReason.PAYMENT_LINK_CREATED_SUCCESSFULLY.getReason());
 
         final String userId = order.getUserId();
-        log.info("Incrementing the order in progress count for user: {} and order: {}", userId, order.getOrderId());
-        cardDetailsUtility.addOrderIdToPaymentPendingOrder(userId, order.getOrderId());
-
-        performCouponActionsPostPaymentAuthorization(order, paymentMode);
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         orderInventoryManagementService.updateStoreOrderQuantity(order, UpdateQuantityRequest.OperationType.DEC);
         clearCart(order);

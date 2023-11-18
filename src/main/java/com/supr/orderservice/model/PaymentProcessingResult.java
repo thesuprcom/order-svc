@@ -10,5 +10,5 @@ import lombok.Value;
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public class PaymentProcessingResult {
   String message;
-  PaymentStatus subscriptionStatus;
+  PaymentStatus paymentStatus;
 }
