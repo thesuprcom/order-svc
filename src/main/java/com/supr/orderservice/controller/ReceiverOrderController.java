@@ -50,10 +50,11 @@ public class ReceiverOrderController {
         return new ResponseEntity(receiverOrderService.viewGift(orderId), HttpStatus.OK);
     }
 
-    @GetMapping("/gift/item-detail/{order-id}/{item-id}")
+    @GetMapping("/gift/item-detail/{order-id}/{item-id}/{seller-id}")
     public ResponseEntity fetchItemDetails(@PathVariable(name = "order-id") String orderId,
-                                           @PathVariable(name = "item-id") String itemId) {
-        return new ResponseEntity(receiverOrderService.fetchItemDetails(orderId, itemId), HttpStatus.OK);
+                                           @PathVariable(name = "item-id") String itemId,
+                                           @PathVariable(name = "seller-id") String sellerId) {
+        return new ResponseEntity(receiverOrderService.fetchItemDetails(orderId, itemId, sellerId), HttpStatus.OK);
     }
 
     @GetMapping("/swap/item/{order-id}/{sku}")

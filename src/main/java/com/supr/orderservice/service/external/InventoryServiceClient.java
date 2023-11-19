@@ -7,6 +7,7 @@ import com.supr.orderservice.model.request.UpdateItemStatusRequest;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
 import com.supr.orderservice.model.response.ProductDataResponse;
 import com.supr.orderservice.model.response.SellerSkuResponse;
+import com.supr.orderservice.model.response.UpdateQuantityResponse;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -25,14 +26,8 @@ import static com.supr.orderservice.utils.Constants.STORE_ID_HEADER;
 public interface InventoryServiceClient {
 
 
-    @PutMapping("/catalog/qty_update")
-    void updateQuantity(@RequestHeader(STORE_ID_HEADER) String storeId, UpdateQuantityRequest request);
-
-    @PutMapping("/catalog/store-item-status-update")
-    void updateStoreItemStatus(@RequestHeader(STORE_ID_HEADER) String storeId, UpdateItemStatusRequest request);
-
-    @GetMapping("/catalog/item-detail/{item-id}")
-    ItemInfo fetchItemDetails(@PathVariable(name = "item-id") String pskuCode);
+    @PutMapping("/update_stock’")
+    UpdateQuantityResponse updateQuantity(UpdateQuantityRequest request);
 
     @GetMapping("/catalog/item-detail/{brand-id}/{total-amount}")
     List<ItemInfo> fetchItemDetailForSwap(@PathVariable(name = "sku") String sku,
@@ -43,5 +38,10 @@ public interface InventoryServiceClient {
     @PostMapping("/api/v1/{country-code}/product/check-stock/")
     Map<String, Product> fetchSellerSkuDetails(@PathVariable(name = "country-code") String countryCode,
                                                @RequestBody CheckItemDetailsRequest checkItemDetailsRequest);
+
+    @GetMapping("/sku/{id-product}/{seller-id}/{country-code}")
+    ItemInfo fetchItemDetails(@PathVariable(name = "id-product") String idProduct,
+                              @PathVariable(name = "seller-id") String sellerId,
+                              @PathVariable(name = "country-code") String countryCode);
 
 }

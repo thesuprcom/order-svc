@@ -342,7 +342,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         final String userId = order.getUserId();
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
-        orderInventoryManagementService.updateStoreOrderQuantity(order, UpdateQuantityRequest.OperationType.DEC);
+        orderInventoryManagementService.updateStoreOrderQuantity(order);
         clearCart(order);
     }
 

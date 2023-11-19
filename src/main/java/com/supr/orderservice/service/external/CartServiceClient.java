@@ -15,7 +15,7 @@ import static com.supr.orderservice.utils.Constants.X_COUNTRY_CODE_HEADER_KEY;
 
 @FeignClient(name = "cart-service", url = "${cart.base-url}")
 public interface CartServiceClient {
-  @DeleteMapping("/api/v1/cart/internal/clear/{orderId}")
+  @DeleteMapping("/api/v1/internal/cart/clear/{orderId}")
   void clearCart(@PathVariable("orderId") String orderId);
 
   @PutMapping("/try-applying-referral-coupon/{user-id}")

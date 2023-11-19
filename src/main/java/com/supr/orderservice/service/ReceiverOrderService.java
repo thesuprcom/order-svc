@@ -25,7 +25,7 @@ public interface ReceiverOrderService {
     FetchGreetingResponse fetchGreeting(String orderId);
     OpenGreetingResponse openGreeting(String orderId);
     ViewGiftResponse viewGift(String orderId);
-    ItemDetailResponse fetchItemDetails(String orderId, String itemId);
+    ItemDetailResponse fetchItemDetails(String orderId, String itemId, String sellerId);
 
     GiftSwapOptionsResponse fetchSwapOptions(String orderId, String sku);
 

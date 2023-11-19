@@ -131,13 +131,13 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     }
 
     @Override
-    public ItemDetailResponse fetchItemDetails(String orderId, String itemId) {
+    public ItemDetailResponse fetchItemDetails(String orderId, String itemId, String sellerId) {
         log.info("Request to fetch item details the gift item: {} for order: {}", itemId, orderId);
         OrderEntity orderEntity = fetchReceiverOrderDetail(orderId);
         ItemInfo itemInfo;
         try {
             log.info("Calling inventory service to fetch details of item: {} for order: {}", itemId, orderId);
-            itemInfo = inventoryServiceClient.fetchItemDetails(itemId);
+            itemInfo = inventoryServiceClient.fetchItemDetails(itemId, sellerId, orderEntity.getCountryCode());
         } catch (Exception e) {
             log.error("Unable to fetch the item details!!", e);
             throw new BadRequestException("Unable to fetch the item details!!");
@@ -280,8 +280,8 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
         VerifyGiftResponse verifyGiftResponse = customerService.verifyOtp(request, "receiver");
         if (verifyGiftResponse.success) {
             OrderEntity orderEntity = fetchSenderOrderDetail(verifyGiftOtpRequest.getOrderId());
-            verifyGiftResponse.setFrom(orderEntity.getSender().getFirstName()+" "+orderEntity.getSender().getLastName());
-            verifyGiftResponse.setTo(orderEntity.getReceiver().getFirstName()+" "+orderEntity.getReceiver().getLastName());
+            verifyGiftResponse.setFrom(orderEntity.getSender().getFirstName() + " " + orderEntity.getSender().getLastName());
+            verifyGiftResponse.setTo(orderEntity.getReceiver().getFirstName() + " " + orderEntity.getReceiver().getLastName());
             verifyGiftResponse.setOrderId(orderEntity.getOrderId());
             createReceiver(orderEntity, verifyGiftOtpRequest);
         } else {
@@ -420,7 +420,7 @@ public class ReceiverOrderServiceImpl implements ReceiverOrderService {
     }
 
     private Map<String, Product> getSellerSkuResponse(String orderId, OrderEntity orderEntity,
-                                                         CheckItemDetailsRequest checkItemDetailsRequest) {
+                                                      CheckItemDetailsRequest checkItemDetailsRequest) {
         Map<String, Product> productDataResponse = new HashMap<>();
         try {
             productDataResponse = inventoryServiceClient.fetchSellerSkuDetails(orderEntity.getCountryCode(), checkItemDetailsRequest);
