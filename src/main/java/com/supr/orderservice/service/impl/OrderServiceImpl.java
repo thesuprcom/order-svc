@@ -322,7 +322,7 @@ public class OrderServiceImpl implements OrderService {
         long currentTimeMillis = System.currentTimeMillis();
         Timestamp currentTimestamp = new Timestamp(currentTimeMillis);
         List<OrderEntity> orderEntities =
-                orderRepository.findAllByStatusAndScheduledDate(ExternalStatus.ORDER_SCHEDULED,
+                orderRepository.findAllByStatusAndScheduledDate(ExternalStatus.GIFT_SCHEDULED,
                 currentTimestamp);
         orderEntities.forEach(orderEntity -> {
             log.info("Moving orderId :{} to Gift sent status form gift scheduled", orderEntity.getOrderId());

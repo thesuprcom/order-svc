@@ -211,13 +211,13 @@ public class OrderUtils {
 
     public static ExternalStatus fetchExternalStatus(String status) {
         if ("OPEN".equalsIgnoreCase(status)) {
-            return ExternalStatus.PLACED;
+            return ExternalStatus.GIFT_PLACED;
         } else if ("Shipped".equalsIgnoreCase(status)) {
             return ExternalStatus.SHIPPED;
         } else if ("Closed".equalsIgnoreCase(status)) {
             return ExternalStatus.CANCELLED;
         } else {
-            return ExternalStatus.CREATED;
+            return ExternalStatus.GIFT_CREATED;
         }
     }
 

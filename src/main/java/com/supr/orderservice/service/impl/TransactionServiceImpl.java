@@ -65,8 +65,7 @@ public class TransactionServiceImpl implements TransactionService {
 
         switch (paymentMode) {
             case Card:
-                if (request.getCardData() != null && request.getCardData().getTokenIdentifier() != null
-                        && request.getCardData().getNumberEncrypted() != null) {
+                if (request.getCardData() != null && request.getCardData().getCardIdentifier() != null) {
                     transaction = processPayment(order, PaymentActionEnum.CREATE_SAVED_CARD_PAYMENT_LINK);
                 } else {
                     transaction = processPayment(order, PaymentActionEnum.CREATE_PAYMENT_LINK);

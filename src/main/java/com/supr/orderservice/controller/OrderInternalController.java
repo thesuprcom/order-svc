@@ -21,7 +21,7 @@ import javax.validation.Valid;
 @RequestMapping("/api/v1/internal/sender")
 @Slf4j
 @RequiredArgsConstructor
-public class InternalOrderController {
+public class OrderInternalController {
     private final PurchaseOrderService purchaseOrderService;
 
     @PostMapping("/purchase")

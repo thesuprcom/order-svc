@@ -20,6 +20,13 @@ public class StateMachineDao {
         this.stateMachineRepository = stateMachineRepository;
     }
 
+    public Optional<StateMachineEntity> getStateMachine1(final String stateMachineType,
+                                                         final OrderItemStatus fromState,
+                                                         final String stateChangeEvent,
+                                                         final EntityTypeEnum entityTypeEnum) {
+        return stateMachineRepository.fetchNextState(stateMachineType, stateChangeEvent, entityTypeEnum, fromState);
+    }
+
     public Optional<StateMachineEntity> getStateMachine(final String stateMachineType,
                                                         final OrderItemStatus fromState,
                                                         final String stateChangeEvent,
@@ -47,4 +54,6 @@ public class StateMachineDao {
         }
         return stateMachineOptional;
     }
+
+
 }

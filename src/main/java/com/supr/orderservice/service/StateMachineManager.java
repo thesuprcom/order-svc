@@ -66,7 +66,7 @@ public class StateMachineManager {
     log.info("State machine type: {}, from state: {}, state change event: {}", stateMachineType,
         fromState, stateChangeEvent);
 
-    Optional<StateMachineEntity> optionalStateMachineEntity = stateMachineDao.getStateMachine(stateMachineType,
+    Optional<StateMachineEntity> optionalStateMachineEntity = stateMachineDao.getStateMachine1(stateMachineType,
         fromState,
         stateChangeEvent,
         entityTypeEnum);

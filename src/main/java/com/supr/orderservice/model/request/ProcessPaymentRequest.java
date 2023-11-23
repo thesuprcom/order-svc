@@ -22,6 +22,7 @@ public class ProcessPaymentRequest implements Serializable {
     private String orderId;
     private Address billingAddress;
     private Boolean isRegisteredBillingAddress;
+    private Boolean isUsingNewCard;
     private CardData cardData;
     private PriceDetails priceDetails;
     private Boolean isWalletApplied;

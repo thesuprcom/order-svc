@@ -162,7 +162,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     }
 
     private OrderEntity createOrderEntity(PurchaseOrderRequest request) {
-        OrderEntity order = createOrder(request.getOrderId());
+        OrderEntity order = createOrder(request);
+        order.setCartIdentifier(request.getCartIdentifier());
         UserCartDTO userCartDTO = request.getUserCartDTO();
         order.setReceiverEmail(userCartDTO.getReceiverEmail());
         order.setReceiverPhone(userCartDTO.getReceiverPhone());
@@ -183,7 +184,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         order.setOrderType(OrderType.SENDER);
         order.setStatus(OrderItemStatus.CREATED);
-        order.setExternalStatus(ExternalStatus.CREATED);
+        order.setExternalStatus(ExternalStatus.GIFT_CREATED);
         order.setUpdatedBy(request.getUpdatedBy());
         return orderService.save(order);
     }
@@ -201,7 +202,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         return orderPrice;
     }
 
-    private OrderEntity createOrder(String orderId) {
+    private OrderEntity createOrder(PurchaseOrderRequest request) {
+        String orderId = request.getOrderId();
         OrderEntity order;
         if (orderId != null) {
             order = senderOrderService.fetchOrder(orderId);
@@ -213,6 +215,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                     order.getTransaction().getStatus() != TransactionStatus.CREATED) {
                 log.info("Existing order id: {} has status: {}, hence generating new order id.", order.getOrderId(),
                         orderStatus);
+                return generateNewOrder();
+            }
+            return order;
+        } else if (request.getCartIdentifier() != null) {
+            order = senderOrderService.fetchOrderFromCartIdentifier(request.getCartIdentifier());
+            if (order == null) {
                 return generateNewOrder();
             }
             return order;
@@ -288,7 +296,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 orderItem.setTotalPrice(orderItem.getPrice().getFinalPrice().multiply(cartInfo.getQuantity()));
                 orderItem.setCouponDetails(userCartDTO.getCouponDetails());
                 orderItem.setStatus(OrderItemStatus.CREATED);
-                orderItem.setExternalStatus(ExternalStatus.CREATED);
+                orderItem.setExternalStatus(ExternalStatus.GIFT_CREATED);
                 orderItem.setUpdatedBy(request.getUpdatedBy());
                 orderItems.add(orderItem);
             }

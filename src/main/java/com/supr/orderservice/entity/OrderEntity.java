@@ -71,6 +71,7 @@ public class OrderEntity extends OrderBaseEntity {
     private String countryCode;
     private BigDecimal totalAmount;
     private BigDecimal receiverTotalAmount;
+    private String cartIdentifier;
     private String pinCode;
     @NotAudited
     @ToString.Exclude

@@ -69,7 +69,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
             totalOrderCount = totalOrderCount + count;
         }
         Page<OrderEntity> orderEntities = orderRepository.
-                findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(ExternalStatus.PLACED,
+                findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(ExternalStatus.GIFT_CREATED,
                         countryCode, startDate, endDate, pageable);
         List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
         long totalOrderItems = portalOrderDetails.stream()

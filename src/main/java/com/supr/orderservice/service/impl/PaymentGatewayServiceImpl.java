@@ -165,10 +165,10 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         request.setEnableTabby(true);
         request.setWidget(true);
         request.setAmountCurrency(order.getCurrencyCode());
-        request.setAmount(order.getTotalAmount().doubleValue());
+        request.setAmount(order.getPrice().getTotalPrice().doubleValue());
         request.setProcessingFeePercentage(processingFeePercentage);
-        request.setFailureReturnUrl("");
-        request.setReturnUrl("");
+        request.setFailureReturnUrl("https://myawesomewebsite.com/failed");
+        request.setReturnUrl("https://myawesomewebsite.com/paymentSuccess");
         request.setActive(true);
         request.setTitle("Payment for orderId: " + order.getOrderId());
         UserInfo receiver = order.getReceiver();

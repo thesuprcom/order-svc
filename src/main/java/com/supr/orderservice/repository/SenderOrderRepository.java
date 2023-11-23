@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SenderOrderRepository extends JpaRepository<OrderEntity, Long> {
     OrderEntity findByOrderIdAndOrderType(String orderId, OrderType orderType);
+    OrderEntity findByCartIdentifierAndOrderType(String orderId, OrderType orderType);
 }

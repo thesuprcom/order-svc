@@ -21,7 +21,6 @@ import static com.supr.orderservice.enums.OrderItemStatus.CANCELLED;
 import static com.supr.orderservice.enums.OrderItemStatus.CANCELLED_BY_SELLER;
 import static com.supr.orderservice.enums.OrderItemStatus.DELIVERED;
 import static com.supr.orderservice.enums.OrderItemStatus.FAILED;
-import static com.supr.orderservice.enums.OrderItemStatus.RTO_CREATED;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ApplicationUtils {
@@ -31,27 +30,22 @@ public class ApplicationUtils {
     private static final OrderItemStatus[] accountingStatus =
             new OrderItemStatus[]{CANCELLED, CANCELLED_BY_SELLER, DELIVERED};
 
-    public static final List<OrderItemStatus> NEW_USER_FOR_COUPON_ORDER_STATUSES =
-            ImmutableList.of(OrderItemStatus.CREATED, FAILED, CANCELLED_BY_SELLER,
-                    RTO_CREATED);
-
     public static List<ExternalStatus> getSellerPortalExternalStatus() {
         return Arrays
-                .asList(ExternalStatus.PLACED, ExternalStatus.PROCESSING_ON_HOLD, ExternalStatus.SHIPPED,
+                .asList(ExternalStatus.GIFT_CREATED, ExternalStatus.PROCESSING_ON_HOLD, ExternalStatus.SHIPPED,
                         ExternalStatus.DELIVERED, ExternalStatus.CANCELLED, ExternalStatus.PARTIALLY_DELIVERED,
                         ExternalStatus.UNDELIVERED, ExternalStatus.PARTIALLY_SHIPPED,
-                        ExternalStatus.CANCELLED_BY_SELLER, ExternalStatus.CANCELLED,
-                        ExternalStatus.RETURN_REQUESTED, ExternalStatus.FORCE_REFUND);
+                        ExternalStatus.CANCELLED_BY_SELLER, ExternalStatus.CANCELLED);
     }
 
     public static List<ExternalStatus> getOrderCancellationExternalStatus() {
         return Arrays
-                .asList(ExternalStatus.PLACED, ExternalStatus.PROCESSING_ON_HOLD,
-                        ExternalStatus.CANCELLED, ExternalStatus.CONFIRMED);
+                .asList(ExternalStatus.GIFT_CREATED, ExternalStatus.PROCESSING_ON_HOLD,
+                        ExternalStatus.CANCELLED, ExternalStatus.GIFT_ACCEPTED);
     }
 
     public static List<ExternalStatus> getUserOrderHistoryExternalStatus() {
-        return Arrays.asList(ExternalStatus.CREATED, ExternalStatus.PLACED, ExternalStatus.GIFT_SWAPPED);
+        return Arrays.asList(ExternalStatus.GIFT_CREATED, ExternalStatus.GIFT_SWAPPED);
     }
 
     public static BigDecimal roundUpToThreeDecimalPlaces(BigDecimal value) {

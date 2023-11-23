@@ -19,5 +19,10 @@ public class SenderOrderServiceImpl implements SenderOrderService {
         return senderOrderRepository.findByOrderIdAndOrderType(orderId, OrderType.SENDER);
     }
 
+    @Override
+    public OrderEntity fetchOrderFromCartIdentifier(String cartIdentifier) {
+        return senderOrderRepository.findByCartIdentifierAndOrderType(cartIdentifier, OrderType.SENDER);
+    }
+
 
 }
