@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,7 +42,7 @@ public class MamoPaymentController {
 
     }
 
-    @PostMapping("success")
+    @GetMapping("success")
     public void handlePaymentSuccess(@RequestParam("createdAt") String createAt,
                                      @RequestParam("paymentLinkId") String paymentLinkId,
                                      @RequestParam("status") String status,
@@ -54,7 +55,7 @@ public class MamoPaymentController {
                 "pgStatus : {}", orderId, paymentLinkId, userType, status);
         OrderEntity order = validateRequest(token, paymentLinkId, orderId, userId, userType);
         TransactionEntity transaction = order.getTransaction();
-        transaction.setTransactionId(transactionId);
+        transaction.setPgTransactionId(transactionId);
         transaction.setPgOrderStatus(TransactionStatus.SUCCESSFUL);
         transaction.setPgOrderCreatedAt(createAt);
         order.setTransaction(transaction);
@@ -67,7 +68,7 @@ public class MamoPaymentController {
 
     }
 
-    @PostMapping("failed")
+    @GetMapping("failed")
     public void handlePaymentFailure(@RequestParam("createdAt") String createAt,
                                      @RequestParam("paymentLinkId") String paymentLinkId,
                                      @RequestParam("status") String status,

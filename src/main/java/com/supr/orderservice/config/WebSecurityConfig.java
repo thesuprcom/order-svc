@@ -28,7 +28,7 @@ public class WebSecurityConfig {
     private static final String[] SKIP_AUTH_URLS =
             new String[]{"/healthcheck/", "/health/**", "/actuator/**", "/configuration/ui/**", "/swagger-resources/**",
                     "/configuration/security/**", "/swagger-ui.html/**", "/webjars/**", "/swagger-ui/**",
-                    "/v2/api-docs/**", "/v1/internal/**", "/api/v1/internal/sender/**"};
+                    "/v2/api-docs/**", "/v1/internal/**", "/api/v1/internal/sender/**", "/api/v1/payment-gateway/**"};
     private final PortalPermissionService portalPermissionService;
     private final JwtTokenUtil jwtTokenUtil;
 
