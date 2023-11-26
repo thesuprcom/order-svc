@@ -122,7 +122,7 @@ public class CloudTaskEnqueueService {
   @SneakyThrows
   private void enqueueSubscriptionCapturePaymentAction(PaymentRequest paymentRequest) {
     String apiPath = getCapturePaymentApiPath();
-    Long pgOrderId = paymentRequest.getPgOrderId();
+    String pgOrderId = paymentRequest.getPgOrderId();
 
     PaymentRequest subscriptionCapturePaymentRequest = buildPaymentRequest(pgOrderId, paymentRequest.getUserId(),
         paymentRequest.getCurrency(), Lists.newArrayList(NextAction.SUBSCRIPTION_REFUND));
@@ -156,7 +156,7 @@ public class CloudTaskEnqueueService {
 
   @SneakyThrows
   private void enqueueSubscriptionRefundAmountAction(final PaymentRequest paymentRequest) {
-    Long pgOrderId = paymentRequest.getPgOrderId();
+    String pgOrderId = paymentRequest.getPgOrderId();
     PaymentRequest subscriptionRefundPaymentRequest = buildPaymentRequest(pgOrderId, paymentRequest.getUserId(),
         paymentRequest.getCurrency(), Lists.newArrayList());
 
@@ -219,7 +219,7 @@ public class CloudTaskEnqueueService {
     return createCloudTaskRequest(taskName, userId, apiPath, SCHEDULE_AFTER_ZERO_SECOND, body);
   }
 
-  private PaymentRequest buildPaymentRequest(final Long pgOrderId,
+  private PaymentRequest buildPaymentRequest(final String pgOrderId,
                                              final String userId,
                                              final String currency,
                                              final List<NextAction> nextActions) {

@@ -15,7 +15,4 @@ public interface TransactionService {
 
     TransactionEntity processPartialRefundPayment(OrderEntity order);
 
-    void processPayment(OrderEntity order);
-
-
 }

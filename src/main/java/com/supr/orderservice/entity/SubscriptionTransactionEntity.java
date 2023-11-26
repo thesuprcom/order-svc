@@ -30,7 +30,7 @@ public class SubscriptionTransactionEntity extends BaseEntity {
   private String orderStatus;
 
   @Column(name = "pg_order_id")
-  private Long pgOrderId;
+  private String pgOrderId;
 
   @Type(type = "json")
   @Column(name = "payment_gateway_response")

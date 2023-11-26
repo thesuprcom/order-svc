@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface SubscriptionTransactionRepository extends JpaRepository<SubscriptionTransactionEntity, Long> {
-  Optional<SubscriptionTransactionEntity> findFirstByPgOrderId(Long pgOrderId);
+  Optional<SubscriptionTransactionEntity> findFirstByPgOrderId(String pgOrderId);
 }

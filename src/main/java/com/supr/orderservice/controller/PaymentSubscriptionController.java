@@ -63,7 +63,7 @@ public class PaymentSubscriptionController {
   @GetMapping("/callback/update/subscription/{payment-mode}/{country-code}")
   public void updateSubscription(@PathVariable("payment-mode") PaymentMode paymentMode,
                                  @PathVariable("country-code") String countryCode,
-                                 @RequestParam("orderId") Long pgOrderId) {
+                                 @RequestParam("orderId") String pgOrderId) {
     try {
       paymentSubscriptionService.updateSubscription(paymentMode, countryCode, pgOrderId);
     } catch (Exception exception) {

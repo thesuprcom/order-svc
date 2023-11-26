@@ -164,6 +164,7 @@ public class OrderServiceImpl implements OrderService {
         updateUserDetailsForOrder(historyVO);
 
         order.getOrderItemStatusHistories().add(historyVO);
+
     }
 
     @Override

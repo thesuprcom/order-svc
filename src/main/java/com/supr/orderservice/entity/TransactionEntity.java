@@ -3,6 +3,7 @@ package com.supr.orderservice.entity;
 import com.supr.orderservice.enums.PaymentMode;
 import com.supr.orderservice.enums.TransactionStatus;
 import com.supr.orderservice.enums.TransactionType;
+import com.supr.orderservice.model.request.PaymentGatewayRequest;
 import com.supr.orderservice.model.response.PaymentGatewayResponse;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -47,7 +48,12 @@ public class TransactionEntity extends BaseEntity {
     @ToString.Exclude
     private OrderEntity order;
 
-    private Long pgOrderId;
+    private String pgOrderId;
+    private String pgOrderIdentifier;
+    private String paymentLink;
+
+    @Enumerated(EnumType.STRING)
+    private TransactionStatus pgOrderStatus;
 
     @Enumerated(EnumType.STRING)
     private TransactionStatus status = TransactionStatus.CREATED;
@@ -60,6 +66,11 @@ public class TransactionEntity extends BaseEntity {
 
     @Type(type = "json")
     @Column(columnDefinition = "json")
+    private PaymentGatewayRequest paymentGatewayRequest;
+
+    @Type(type = "json")
+    @Column(columnDefinition = "json")
     private PaymentGatewayResponse paymentGatewayResponse;
+    private String failureReason;
 }
 

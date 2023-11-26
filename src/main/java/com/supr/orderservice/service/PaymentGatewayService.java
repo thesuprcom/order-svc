@@ -18,7 +18,7 @@ public interface PaymentGatewayService {
 
   void unsubscribe(String userId);
 
-  void updateSubscription(final PaymentMode paymentMode, final String countryCode, Long pgOrderId);
+  void updateSubscription(final PaymentMode paymentMode, final String countryCode, String pgOrderId);
 
   void capturePayment(PaymentRequest paymentRequest, final String accessToken, String signature);
 

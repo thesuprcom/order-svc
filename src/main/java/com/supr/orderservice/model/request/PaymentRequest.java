@@ -18,7 +18,7 @@ import java.util.List;
 public class PaymentRequest {
   String userId;
   String orderId;
-  Long pgOrderId;
+  String pgOrderId;
   String currency;
   BigDecimal amount;
   PaymentMode paymentMode;

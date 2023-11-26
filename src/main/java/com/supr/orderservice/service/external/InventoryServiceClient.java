@@ -26,7 +26,7 @@ import static com.supr.orderservice.utils.Constants.STORE_ID_HEADER;
 public interface InventoryServiceClient {
 
 
-    @PutMapping("/update_stock’")
+    @PutMapping("/update_stock")
     UpdateQuantityResponse updateQuantity(UpdateQuantityRequest request);
 
     @GetMapping("/catalog/item-detail/{brand-id}/{total-amount}")

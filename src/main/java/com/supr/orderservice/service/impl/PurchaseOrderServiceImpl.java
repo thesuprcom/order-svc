@@ -130,11 +130,12 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         PaymentProcessingResponse pgResponse = transactionService.processTransaction(order, request);
         if (pgResponse.getPaymentProcessingResult().getPaymentStatus() == PaymentStatus.INITIATED) {
             performPostPaymentAuthActionAndUpdateItemQuantity(request, order, StateMachineType.SENDER.name()
-                    , OrderChangeEvent.SENDER_PAYMENT_LINK_CREATED.name());
+                    , OrderChangeEvent.SENDER_PAYMENT_LINK_CREATION_SUCCESS.name());
         } else {
-            orderService.changeOrderState(order, StateMachineType.SENDER.name(), OrderChangeEvent.SENDER_PLACE_ORDER.name(),
+            orderService.changeOrderState(order, StateMachineType.SENDER.name(), OrderChangeEvent.SENDER_PAYMENT_LINK_CREATION_FAILED.name(),
                     true, StateChangeReason.PAYMENT_LINK_CREATED_FAILED.getReason());
         }
+        orderService.save(order);
         return pgResponse;
     }
 
@@ -348,10 +349,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
         orderService.changeOrderState(order, stateMachineType, orderChangeEvent, true,
                 StateChangeReason.PAYMENT_LINK_CREATED_SUCCESSFULLY.getReason());
 
-        final String userId = order.getUserId();
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
-        orderInventoryManagementService.updateStoreOrderQuantity(order);
-        clearCart(order);
+        //orderInventoryManagementService.updateStoreOrderQuantity(order);
     }
 
     private void performCouponActionsPostPaymentAuthorization(final OrderEntity order, final PaymentMode paymentMode) {

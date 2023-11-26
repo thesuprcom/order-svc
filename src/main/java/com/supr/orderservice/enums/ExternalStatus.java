@@ -9,6 +9,7 @@ public enum ExternalStatus {
     GIFT_CREATED("Gift Created"),
     GIFT_OPENED("Gift Opened"),
     GIFT_ACCEPTED("Gift Accepted"),
+    PAYMENT_INITIATED("Payment initiated"),
     GIFT_SWAPPED("Gift Swapped"),
     SHIPPED("Shipped"),
     PARTIALLY_SHIPPED("Partially Shipped"),
@@ -21,6 +22,7 @@ public enum ExternalStatus {
     PENDING("Merchant pending"),
     UNDELIVERED("Gift undelivered"),
     CANCELLED_BY_SELLER("Gift cancelled by seller"),
+    FAILED("Failed"),
     EXPIRED("Expired");
 
     private String status;

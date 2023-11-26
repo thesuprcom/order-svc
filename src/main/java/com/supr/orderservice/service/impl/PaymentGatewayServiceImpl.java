@@ -3,14 +3,17 @@ package com.supr.orderservice.service.impl;
 import com.google.gson.Gson;
 import com.supr.orderservice.entity.CardDetailsEntity;
 import com.supr.orderservice.entity.OrderEntity;
+import com.supr.orderservice.entity.TransactionEntity;
 import com.supr.orderservice.enums.ErrorEnum;
 import com.supr.orderservice.enums.PaymentMode;
 import com.supr.orderservice.enums.SubscriptionPageContext;
+import com.supr.orderservice.enums.TransactionStatus;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.SavedCardDetails;
 import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.pg.request.MamoPayPaymentLinkRequest;
 import com.supr.orderservice.model.pg.response.MamoPayPaymentLinkResponse;
+import com.supr.orderservice.model.request.PaymentGatewayRequest;
 import com.supr.orderservice.model.request.PaymentRequest;
 import com.supr.orderservice.model.request.SubscriptionRequest;
 import com.supr.orderservice.model.response.PaymentGatewayResponse;
@@ -68,7 +71,7 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
     }
 
     @Override
-    public void updateSubscription(PaymentMode paymentMode, String countryCode, Long pgOrderId) {
+    public void updateSubscription(PaymentMode paymentMode, String countryCode, String pgOrderId) {
 
     }
 
@@ -125,19 +128,27 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
     @Override
     public PaymentGatewayResponse createPaymentLink(OrderEntity order) {
         PaymentGatewayResponse paymentGatewayResponse = new PaymentGatewayResponse();
+        TransactionEntity transaction = order.getTransaction();
         log.info("Request to call payment gateway for order Id: {}", order.getOrderId());
         MamoPayPaymentLinkRequest mamoPayPaymentLinkRequest = createMamoPayLinkRequest(order);
+        transaction.setPaymentGatewayRequest(new PaymentGatewayRequest(mamoPayPaymentLinkRequest));
+        log.info("Payment Link request: {}", mamoPayPaymentLinkRequest);
         try {
             MamoPayPaymentLinkResponse response = mamoPayServiceClient.createPaymentLink(mamoPayPaymentLinkRequest,
                     mamoPayAccessToken);
             log.info("Payment gateway Call is success for order id: {}", order.getOrderId());
             paymentGatewayResponse.setResponse(response);
-            return paymentGatewayResponse;
+            transaction.setPgOrderStatus(TransactionStatus.CREATE_PAYMENT_LINK);
+            transaction.setPaymentLink(response.getPaymentUrl());
+            transaction.setPgOrderIdentifier(response.getId());
+
         } catch (Exception exception) {
             log.error("Error while calling the mamopay pg for order : {} Exception : {} ", order.getOrderId(),
                     exception);
-            throw new OrderServiceException(ErrorEnum.PAYMENT_GATEWAY_ERROR);
+            transaction.setPgOrderStatus(TransactionStatus.FAILED_TO_CREATE_PAYMENT_LINK);
+            transaction.setFailureReason(exception.getMessage());
         }
+        return paymentGatewayResponse;
     }
 
     @Override
@@ -164,7 +175,7 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         request.setEnableMessage(true);
         request.setEnableTabby(true);
         request.setWidget(true);
-        request.setAmountCurrency(order.getCurrencyCode());
+        request.setAmountCurrency(fetchAmountCurrency(order.getCurrencyCode()));
         request.setAmount(order.getPrice().getTotalPrice().doubleValue());
         request.setProcessingFeePercentage(processingFeePercentage);
         request.setFailureReturnUrl("https://myawesomewebsite.com/failed");
@@ -178,6 +189,13 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         }
         request.setDescription("Sending gifts to " + name);
         return request;
+    }
+
+    private String fetchAmountCurrency(String currencyCode) {
+        if(currencyCode.equalsIgnoreCase("ae"))
+            return "AED";
+        else
+            return "AED";
     }
 
 }
