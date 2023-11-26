@@ -3,6 +3,7 @@ package com.supr.orderservice.enums;
 import java.util.Optional;
 
 public enum TransactionStatus {
+    CAPTURED,
     CREATED,
     AUTHORIZED,
     SUCCESSFUL,

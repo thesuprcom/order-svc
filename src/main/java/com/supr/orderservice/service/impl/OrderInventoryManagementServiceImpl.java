@@ -4,6 +4,7 @@ import com.supr.orderservice.entity.OrderEntity;
 import com.supr.orderservice.model.request.UpdateQuantityRequest;
 import com.supr.orderservice.model.response.UpdateQuantityResponse;
 import com.supr.orderservice.service.OrderInventoryManagementService;
+import com.supr.orderservice.service.external.CatalogUpdateClient;
 import com.supr.orderservice.service.external.InventoryServiceClient;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +18,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderInventoryManagementServiceImpl implements OrderInventoryManagementService {
 
-    private final InventoryServiceClient inventoryServiceClient;
+    private final CatalogUpdateClient catalogUpdateClient;
+
 
 
     @Override
@@ -35,7 +37,7 @@ public class OrderInventoryManagementServiceImpl implements OrderInventoryManage
           data.setSellerId(orderItemVO.getSellerId());
           dataItems.add(data);
         });
-        return inventoryServiceClient.updateQuantity(updateQuantityRequest);
+        return catalogUpdateClient.updateQuantity(updateQuantityRequest);
     }
 
 

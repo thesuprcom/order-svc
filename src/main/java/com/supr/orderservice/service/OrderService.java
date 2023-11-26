@@ -20,6 +20,8 @@ public interface OrderService {
 
   OrderEntity fetchSenderOrder(String orderId);
   OrderEntity fetchReceiverOrder(String orderId);
+  OrderEntity fetchReceiverOrderWithStatus(String orderId);
+  OrderEntity fetchSenderOrderWithStatus(String orderId);
 
   OrderEntity fetchOrderForStore(String orderId, String storeId);
 

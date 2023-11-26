@@ -25,10 +25,6 @@ import static com.supr.orderservice.utils.Constants.STORE_ID_HEADER;
 @FeignClient(name = "store-catalog-write-service", url = "${catalog.base-url}")
 public interface InventoryServiceClient {
 
-
-    @PutMapping("/update_stock")
-    UpdateQuantityResponse updateQuantity(UpdateQuantityRequest request);
-
     @GetMapping("/catalog/item-detail/{brand-id}/{total-amount}")
     List<ItemInfo> fetchItemDetailForSwap(@PathVariable(name = "sku") String sku,
                                           @PathVariable(name = "total-amount") String totalAmount,

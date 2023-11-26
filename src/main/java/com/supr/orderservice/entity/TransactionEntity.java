@@ -1,5 +1,6 @@
 package com.supr.orderservice.entity;
 
+import com.supr.orderservice.enums.OrderType;
 import com.supr.orderservice.enums.PaymentMode;
 import com.supr.orderservice.enums.TransactionStatus;
 import com.supr.orderservice.enums.TransactionType;
@@ -50,8 +51,12 @@ public class TransactionEntity extends BaseEntity {
 
     private String pgOrderId;
     private String pgOrderIdentifier;
-    private String paymentLink;
+    private String pgTransactionId;
 
+    private String pgOrderCreatedAt;
+    private String paymentLink;
+    @Enumerated(EnumType.STRING)
+    private OrderType orderType;
     @Enumerated(EnumType.STRING)
     private TransactionStatus pgOrderStatus;
 

@@ -96,6 +96,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             OrderEntity order = createOrderEntity(request);
             final OrderEntity finalOrder = order;
             final TransactionEntity transaction = transactionService.createTransaction(finalOrder);
+            transaction.setOrderType(OrderType.SENDER);
             order.setTransaction(transaction);
             List<OrderItemEntity> orderItemEntities = generateOrderItems(finalOrder, request);
             orderItemRepository.saveAll(orderItemEntities);

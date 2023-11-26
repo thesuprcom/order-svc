@@ -23,6 +23,7 @@ import com.supr.orderservice.service.PaymentGatewayService;
 import com.supr.orderservice.service.external.MamoPayServiceClient;
 import com.supr.orderservice.utils.PaymentSubscriptionUtil;
 import com.supr.orderservice.utils.PaymentsUtil;
+import com.supr.orderservice.utils.TokenUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.logging.log4j.util.Strings;
@@ -43,10 +44,14 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
     private final PaymentsUtil paymentsUtil;
     private final CardDetailsRepository cardDetailsRepository;
     private final MamoPayServiceClient mamoPayServiceClient;
+    private final TokenUtility tokenUtility;
     private final Gson gson;
 
     @Value("${processing-fee-percentage}")
     private int processingFeePercentage;
+
+    @Value("${order.external-base-url}")
+    private String orderServiceBaseUrl;
 
     @Value("${payment.gateway.access-token}")
     private String mamoPayAccessToken;
@@ -163,8 +168,10 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         request.setEmail(order.getSender() != null ? order.getSender().getEmailId() : Strings.EMPTY);
         request.setExternalId(order.getOrderId());
         HashMap<String, String> customerData = new HashMap<>();
-        customerData.put("billing_address", gson.toJson(order.getBillingAddress()));
+        customerData.put("user_type", order.getOrderType().name());
         customerData.put("user_id", order.getUserId());
+        customerData.put("order_id", order.getOrderId());
+        customerData.put("token", tokenUtility.createTokenForPayment(order));
         request.setCustomData(customerData);
         request.setCapacity(1);
         request.setSendCustomerReceipt(false);
@@ -173,14 +180,14 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         request.setEnableCustomerDetails(true);
         request.setSaveCard("optional");
         request.setEnableTips(true);
-        request.setEnableMessage(true);
+        request.setEnableMessage(false);
         request.setEnableTabby(true);
         request.setWidget(true);
         request.setAmountCurrency(fetchAmountCurrency(order.getCurrencyCode()));
         request.setAmount(order.getPrice().getTotalPrice().doubleValue());
         request.setProcessingFeePercentage(processingFeePercentage);
-        request.setFailureReturnUrl("https://myawesomewebsite.com/failed");
-        request.setReturnUrl("https://myawesomewebsite.com/paymentSuccess");
+        request.setFailureReturnUrl(fetchPaymentFailureLink());
+        request.setReturnUrl(fetchPaymentSuccessLink());
         request.setActive(true);
         request.setTitle("Payment for orderId: " + order.getOrderId());
         UserInfo receiver = order.getReceiver();
@@ -192,8 +199,16 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         return request;
     }
 
+    private String fetchPaymentSuccessLink() {
+        return orderServiceBaseUrl + "/api/v1/payment-gateway/success";
+    }
+
+    private String fetchPaymentFailureLink() {
+        return orderServiceBaseUrl + "/api/v1/payment-gateway/failed";
+    }
+
     private String fetchAmountCurrency(String currencyCode) {
-        if(currencyCode.equalsIgnoreCase("ae"))
+        if (currencyCode.equalsIgnoreCase("ae"))
             return "AED";
         else
             return "AED";
