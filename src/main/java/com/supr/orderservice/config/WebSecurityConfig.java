@@ -26,9 +26,9 @@ public class WebSecurityConfig {
 
     private static final String OMS_USERS_UID = "2679a0d1-15d8-4058-9e18-5c6d55ea62b5";
     private static final String[] SKIP_AUTH_URLS =
-            new String[]{"/health/**", "/actuator/**", "/configuration/ui/**", "/swagger-resources/**",
+            new String[]{"/healthcheck/", "/health/**", "/actuator/**", "/configuration/ui/**", "/swagger-resources/**",
                     "/configuration/security/**", "/swagger-ui.html/**", "/webjars/**", "/swagger-ui/**",
-                    "/v2/api-docs/**", "/healthcheck/", "/v1/internal/**","/api/v1/internal/sender/**"};
+                    "/v2/api-docs/**", "/v1/internal/**", "/api/v1/internal/sender/**"};
     private final PortalPermissionService portalPermissionService;
     private final JwtTokenUtil jwtTokenUtil;
 
@@ -53,7 +53,8 @@ public class WebSecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
         httpSecurity.csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/v1/internal/**", "/healthcheck", "/actuator/health").permitAll() // Exclude this URL from the filter chain
+                .antMatchers(SKIP_AUTH_URLS).permitAll() // Exclude this URL
+                // from the filter chain
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
