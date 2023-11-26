@@ -39,6 +39,11 @@ public class CardDetailsEntity extends BaseEntity {
 
     @Getter
     @Setter
+    @Column(name = "card_id")
+    private String cardId;
+
+    @Getter
+    @Setter
     @Column(name = "token_id")
     private String tokenId;
 

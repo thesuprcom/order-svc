@@ -61,6 +61,11 @@ public class ApplicationUtils {
                 Integer.toString(random.nextInt(1260) + 36, 36)).toUpperCase();
     }
 
+    public static String generateCardId() {
+        return String.join("", "CARD", Long.toString(System.currentTimeMillis(), 36),
+                Integer.toString(random.nextInt(1260) + 36, 36)).toUpperCase();
+    }
+
     public static String generateTransactionId() {
         return String.join("", "TX", Long.toString(System.currentTimeMillis(), 36),
                 Integer.toString(random.nextInt(1260) + 36, 36)).toUpperCase();

@@ -5,6 +5,7 @@ import com.supr.orderservice.enums.PaymentMode;
 import com.supr.orderservice.enums.TransactionStatus;
 import com.supr.orderservice.enums.TransactionType;
 import com.supr.orderservice.model.request.PaymentGatewayRequest;
+import com.supr.orderservice.model.response.MamoPayChargeDetailsResponse;
 import com.supr.orderservice.model.response.PaymentGatewayResponse;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -72,6 +73,10 @@ public class TransactionEntity extends BaseEntity {
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private PaymentGatewayRequest paymentGatewayRequest;
+
+    @Type(type = "json")
+    @Column(columnDefinition = "json")
+    private MamoPayChargeDetailsResponse chargeDetails;
 
     @Type(type = "json")
     @Column(columnDefinition = "json")

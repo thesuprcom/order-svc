@@ -19,11 +19,11 @@ import com.supr.orderservice.enums.StateMachineType;
 import com.supr.orderservice.enums.TransactionStatus;
 import com.supr.orderservice.exception.BadRequestException;
 import com.supr.orderservice.exception.OrderServiceException;
+import com.supr.orderservice.model.CardDetails;
 import com.supr.orderservice.model.CouponDetails;
 import com.supr.orderservice.model.GreetingCard;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
-import com.supr.orderservice.model.OrderSummaryDTO;
 import com.supr.orderservice.model.PriceDetails;
 import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.SavedCardDetails;
@@ -31,7 +31,6 @@ import com.supr.orderservice.model.UserCartDTO;
 import com.supr.orderservice.model.request.CheckItemDetailsRequest;
 import com.supr.orderservice.model.request.ProcessPaymentRequest;
 import com.supr.orderservice.model.request.PurchaseOrderRequest;
-import com.supr.orderservice.model.request.UpdateQuantityRequest;
 import com.supr.orderservice.model.response.PaymentProcessingResponse;
 import com.supr.orderservice.model.response.PurchaseOrderResponse;
 import com.supr.orderservice.repository.CardDetailsRepository;
@@ -111,7 +110,9 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                     OrderChangeEvent.SENDER_ORDER_CHECKOUT.name());
 
             order = orderService.save(order);
-            SavedCardDetails savedCardDetails = paymentGatewayService.paymentDetails(order.getUserId());
+            List<CardDetailsEntity> cardDetailsEntities =
+                    cardDetailsRepository.findTop5ByUserIdOrderByUpdatedAtDesc(order.getUserId());
+            SavedCardDetails savedCardDetails = fetchSavedCardDetails(cardDetailsEntities);
             PurchaseOrderResponse response = new PurchaseOrderResponse();
             response.setOrderId(order.getOrderId());
             response.setAmountPayable(order.getTotalAmount());
@@ -121,6 +122,16 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             log.error("Error while creating the order: {}", exception);
             throw new OrderServiceException("Unable to create the order");
         }
+    }
+
+    private SavedCardDetails fetchSavedCardDetails(List<CardDetailsEntity> cardDetailsEntities) {
+        List<CardDetails> savedCard = new ArrayList<>();
+        cardDetailsEntities.forEach(cardDetailsEntity -> {
+            CardDetails cardDetails =   CardDetails.builder().maskedCard(cardDetailsEntity.getTokenId())
+                            .cardId(cardDetailsEntity.getCardId()).cardType(cardDetailsEntity.getCardType()).build();
+            savedCard.add(cardDetails);
+        });
+        return SavedCardDetails.builder().savedCards(savedCard).build();
     }
 
 
@@ -352,26 +363,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
         order.setOrderPlacedTime(DateUtils.getCurrentDateTimeUTC());
         //orderInventoryManagementService.updateStoreOrderQuantity(order);
-    }
-
-    private void performCouponActionsPostPaymentAuthorization(final OrderEntity order, final PaymentMode paymentMode) {
-        final CouponDetails couponDetails = order.getCouponDetails();
-
-        String maskedCardNumber = cardDetailsRepository.findFirstByUserId(order.getUserId())
-                .map(CardDetailsEntity::getPaymentInfo)
-                .orElse(null);
-
-        if (CouponUtility.isCouponAppliedToOrder(couponDetails)) {
-            final boolean invalidPaymentOptionSelectedForCoupon =
-                    CouponUtility.isInvalidPaymentOptionSelectedForCoupon(couponDetails, paymentMode, maskedCardNumber);
-
-            if (invalidPaymentOptionSelectedForCoupon) {
-                throw new BadRequestException(COUPON_DISCOUNT_IS_NOT_APPLICABLE_ON_THIS_PAYMENT_METHOD);
-            }
-
-            couponInventoryManagementService.updateCouponInventory(order, CouponInventoryOperationType.INCREMENT,
-                    USER_LEVEL_AND_COUPON_LEVEL);
-        }
     }
 
     private void clearCart(final OrderEntity order) {
