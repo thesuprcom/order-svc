@@ -166,6 +166,7 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         customerData.put("billing_address", gson.toJson(order.getBillingAddress()));
         customerData.put("user_id", order.getUserId());
         request.setCustomData(customerData);
+        request.setCapacity(1);
         request.setSendCustomerReceipt(false);
         request.setEnableQrCode(false);
         request.setEnableQuantity(false);
