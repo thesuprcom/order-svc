@@ -12,7 +12,7 @@ import java.util.Optional;
 public interface CardDetailsRepository extends JpaRepository<CardDetailsEntity, Long> {
     List<CardDetailsEntity> findByUserId(String userId);
 
-    List<CardDetailsEntity> findTop5ByUserIdIsDeletedOrderByUpdatedAtDesc(String userId, boolean isDeleted);
+    List<CardDetailsEntity> findTop5ByUserIdAndIsDeletedOrderByUpdatedAtDesc(String userId, boolean isDeleted);
 
     Optional<CardDetailsEntity> findFirstByUserId(String userId);
 

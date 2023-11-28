@@ -111,7 +111,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
             order = orderService.save(order);
             List<CardDetailsEntity> cardDetailsEntities =
-                    cardDetailsRepository.findTop5ByUserIdIsDeletedOrderByUpdatedAtDesc(order.getUserId(), false);
+                    cardDetailsRepository.findTop5ByUserIdAndIsDeletedOrderByUpdatedAtDesc(order.getUserId(), false);
             SavedCardDetails savedCardDetails = cardDetailsUtility.fetchSavedCardDetails(cardDetailsEntities);
             PurchaseOrderResponse response = new PurchaseOrderResponse();
             response.setOrderId(order.getOrderId());
