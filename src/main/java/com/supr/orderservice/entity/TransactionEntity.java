@@ -45,6 +45,8 @@ public class TransactionEntity extends BaseEntity {
 
     private String currency;
 
+    private String cardId;
+
     @NotAudited
     @OneToOne(fetch = FetchType.LAZY)
     @ToString.Exclude

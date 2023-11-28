@@ -49,6 +49,11 @@ public class CardDetailsEntity extends BaseEntity {
 
     @Getter
     @Setter
+    @Column(name = "is_deleted")
+    private boolean isDeleted;
+
+    @Getter
+    @Setter
     @Column(name = "card_type")
     private String cardType;
 

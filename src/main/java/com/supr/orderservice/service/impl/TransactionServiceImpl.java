@@ -67,7 +67,9 @@ public class TransactionServiceImpl implements TransactionService {
 
         switch (paymentMode) {
             case Card:
-                if (request.getCardData() != null && request.getCardData().getCardIdentifier() != null) {
+                if (request.getCardData() != null && request.getCardData().getCardId() != null) {
+                    transaction.setCardId(request.getCardData().getCardId());
+                    order.setTransaction(transaction);
                     transaction = processPayment(order, PaymentActionEnum.CREATE_SAVED_CARD_PAYMENT_LINK);
                 } else {
                     transaction = processPayment(order, PaymentActionEnum.CREATE_PAYMENT_LINK);
@@ -208,7 +210,6 @@ public class TransactionServiceImpl implements TransactionService {
         switch (paymentActionEnum) {
             case CREATE_PAYMENT_LINK:
                 return Optional.of(pgService.createPaymentLink(order));
-
             case CREATE_SAVED_CARD_PAYMENT_LINK:
                 return Optional.of(pgService.createSavedCardPaymentLink(order));
             case REVERSE:

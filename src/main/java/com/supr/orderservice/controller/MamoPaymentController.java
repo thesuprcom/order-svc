@@ -123,7 +123,7 @@ public class MamoPaymentController {
             String tokenId = response.getPaymentMethod().getCardId();
             Optional<CardDetailsEntity> cardDetailsEntityOptional =
                     cardDetailsRepository.findByUserIdAndTokenId(order.getUserId(), tokenId);
-            if (!cardDetailsEntityOptional.isPresent()) {
+            if (cardDetailsEntityOptional.isEmpty()) {
                 CardDetailsEntity cardDetails = new CardDetailsEntity();
                 PaymentMethod paymentMethod = response.getPaymentMethod();
                 cardDetails.setCardType(paymentMethod.getType());
@@ -132,6 +132,7 @@ public class MamoPaymentController {
                 cardDetails.setTokenId(paymentMethod.getCardLast4());
                 cardDetails.setSubscriptionId(paymentMethod.getCardId());
                 cardDetails.setBrand(paymentMethod.getOrigin());
+                cardDetails.setDeleted(false);
                 cardDetails.setCardId(generateCardId());
                 cardDetailsRepository.save(cardDetails);
                 log.info("Card details are saved for the userId: {}", order.getUserId());

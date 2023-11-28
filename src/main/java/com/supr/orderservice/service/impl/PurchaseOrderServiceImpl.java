@@ -111,8 +111,8 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
 
             order = orderService.save(order);
             List<CardDetailsEntity> cardDetailsEntities =
-                    cardDetailsRepository.findTop5ByUserIdOrderByUpdatedAtDesc(order.getUserId());
-            SavedCardDetails savedCardDetails = fetchSavedCardDetails(cardDetailsEntities);
+                    cardDetailsRepository.findTop5ByUserIdIsDeletedAndOrderByUpdatedAtDesc(order.getUserId(), false);
+            SavedCardDetails savedCardDetails = cardDetailsUtility.fetchSavedCardDetails(cardDetailsEntities);
             PurchaseOrderResponse response = new PurchaseOrderResponse();
             response.setOrderId(order.getOrderId());
             response.setAmountPayable(order.getTotalAmount());
@@ -123,17 +123,6 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
             throw new OrderServiceException("Unable to create the order");
         }
     }
-
-    private SavedCardDetails fetchSavedCardDetails(List<CardDetailsEntity> cardDetailsEntities) {
-        List<CardDetails> savedCard = new ArrayList<>();
-        cardDetailsEntities.forEach(cardDetailsEntity -> {
-            CardDetails cardDetails =   CardDetails.builder().maskedCard(cardDetailsEntity.getTokenId())
-                            .cardId(cardDetailsEntity.getCardId()).cardType(cardDetailsEntity.getCardType()).build();
-            savedCard.add(cardDetails);
-        });
-        return SavedCardDetails.builder().savedCards(savedCard).build();
-    }
-
 
     @Override
     public PaymentProcessingResponse placeOrder(ProcessPaymentRequest request) {

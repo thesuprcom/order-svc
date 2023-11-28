@@ -17,7 +17,6 @@ public class CardDetails {
   private final String paymentInfo;
   private final String expiryMonth;
   private final String subscriptionId;
-
   private String maskedCard;
   private  String cardId;
   private final PaymentMode paymentMode;

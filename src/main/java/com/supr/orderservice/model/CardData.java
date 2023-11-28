@@ -21,6 +21,7 @@ import java.io.Serializable;
 @NoArgsConstructor
 public class CardData implements Serializable {
   private String cardIdentifier;
+  private String cardId;
   private String cardToken;
 
 }
