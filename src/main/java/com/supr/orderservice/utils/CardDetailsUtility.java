@@ -63,7 +63,7 @@ public class CardDetailsUtility {
     }
 
     public List<CardDetailsEntity> fetchCardDetailsList(String userId) {
-        return cardDetailsRepository.findTop5ByUserIdIsDeletedAndOrderByUpdatedAtDesc(userId, false);
+        return cardDetailsRepository.findTop5ByUserIdIsDeletedOrderByUpdatedAtDesc(userId, false);
     }
 
     public SavedCardDetails fetchSavedCardDetails(List<CardDetailsEntity> cardDetailsEntities) {
