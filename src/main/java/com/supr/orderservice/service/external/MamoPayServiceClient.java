@@ -1,6 +1,7 @@
 package com.supr.orderservice.service.external;
 
 import com.supr.orderservice.model.pg.request.MamoPayPaymentLinkRequest;
+import com.supr.orderservice.model.pg.request.MamoPaySavedCardPaymentRequest;
 import com.supr.orderservice.model.pg.response.MamoPayPaymentLinkResponse;
 import com.supr.orderservice.model.response.MamoPayChargeDetailsResponse;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -20,4 +21,9 @@ public interface MamoPayServiceClient {
     @GetMapping(value = "/manage_api/v1/charges/{charge-id}")
     MamoPayChargeDetailsResponse fetchChargeDetails(@PathVariable("change-id") String chargeId,
                                                     @RequestHeader("Authorization") String accessToken);
+
+    @PostMapping(value = "/manage_api/v1/charges", consumes = MediaType.APPLICATION_JSON_VALUE)
+    MamoPayChargeDetailsResponse initiateSavedCardPayment(
+            @RequestBody MamoPaySavedCardPaymentRequest mamoPaySavedCardPaymentRequest,
+            @RequestHeader("Authorization") String accessToken);
 }

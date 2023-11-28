@@ -11,5 +11,6 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PaymentGatewayResponse implements Serializable {
     private MamoPayPaymentLinkResponse response;
+    private MamoPayChargeDetailsResponse chargeDetailsResponse;
 
 }

@@ -12,10 +12,12 @@ import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.SavedCardDetails;
 import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.pg.request.MamoPayPaymentLinkRequest;
+import com.supr.orderservice.model.pg.request.MamoPaySavedCardPaymentRequest;
 import com.supr.orderservice.model.pg.response.MamoPayPaymentLinkResponse;
 import com.supr.orderservice.model.request.PaymentGatewayRequest;
 import com.supr.orderservice.model.request.PaymentRequest;
 import com.supr.orderservice.model.request.SubscriptionRequest;
+import com.supr.orderservice.model.response.MamoPayChargeDetailsResponse;
 import com.supr.orderservice.model.response.PaymentGatewayResponse;
 import com.supr.orderservice.model.response.PaymentProcessingResponse;
 import com.supr.orderservice.repository.CardDetailsRepository;
@@ -158,7 +160,35 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
 
     @Override
     public PaymentGatewayResponse createSavedCardPaymentLink(OrderEntity order) {
+        PaymentGatewayResponse paymentGatewayResponse = new PaymentGatewayResponse();
+        TransactionEntity transaction = order.getTransaction();
+        String cardId = transaction.getCardId();
+        CardDetailsEntity cardDetails = cardDetailsRepository.findByUserIdAndCardId(order.getUserId(), cardId)
+                .orElseThrow(() -> new OrderServiceException(ErrorEnum.NO_CARD_DETAILS_AVAILABLE));
+        MamoPaySavedCardPaymentRequest mamoPaySavedCardPaymentRequest = new MamoPaySavedCardPaymentRequest();
+        mamoPaySavedCardPaymentRequest.setCardId(cardDetails.getTokenId());
+        mamoPaySavedCardPaymentRequest.setCurrency(order.getCurrencyCode());
+        mamoPaySavedCardPaymentRequest.setAmount(order.getTotalAmount().doubleValue());
+        log.info("Saved card payment request: {}", mamoPaySavedCardPaymentRequest);
+        try {
+            MamoPayChargeDetailsResponse response = mamoPayServiceClient.initiateSavedCardPayment(mamoPaySavedCardPaymentRequest,
+                    mamoPayAccessToken);
+            log.info("Saved card payment Payment gateway Call is success for order id: {}", order.getOrderId());
+            log.info("Saved card payment response status :{} orderId:{}", response.getStatus(), order.getOrderId());
+            paymentGatewayResponse.setChargeDetailsResponse(response);
+            transaction.setPgOrderStatus(TransactionStatus.SAVED_CARD_PAYMENT_SUCCESS);
+            transaction.setPaymentGatewayResponse(paymentGatewayResponse);
+            transaction.setPgOrderIdentifier(response.getId());
+            transaction.setPgOrderCreatedAt(response.getCreatedDate());
+            transaction.setPgOrderId(response.getId());
+            transaction.setTransactionId(response.getId());
 
+        } catch (Exception exception) {
+            log.error("Error while calling the mamopay pg for order : {} Exception : {} ", order.getOrderId(),
+                    exception);
+            transaction.setPgOrderStatus(TransactionStatus.SAVED_CARD_PAYMENT_FAILED);
+            transaction.setFailureReason(exception.getMessage());
+        }
         return null;
     }
 
