@@ -13,5 +13,8 @@ public class CustomerOrderResponse {
     private List<CustomerOrderDetail> customerOrderDetails;
     private String status;
     private int noOfOrders;
+    private int totalPages;
+    private long totalOrders;
+    private int numberOfOrders;
 
 }

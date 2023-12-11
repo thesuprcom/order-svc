@@ -61,6 +61,11 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public Page<OrderEntity> fetchSenderOrderPastOrderList(Pageable pageable) {
+        return senderOrderRepository.findByOrderType(OrderType.SENDER, pageable);
+    }
+
+    @Override
     public OrderEntity fetchReceiverOrder(String orderId) {
         return receiverOrderRepository.findByOrderIdAndOrderType(orderId, OrderType.RECEIVER);
     }

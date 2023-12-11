@@ -21,6 +21,7 @@ public interface OrderService {
   OrderEntity fetchSenderOrder(String orderId);
   OrderEntity fetchReceiverOrder(String orderId);
   OrderEntity fetchReceiverOrderWithStatus(String orderId);
+  Page<OrderEntity> fetchSenderOrderPastOrderList(Pageable pageable);
   OrderEntity fetchSenderOrderWithStatus(String orderId);
 
   OrderEntity fetchOrderForStore(String orderId, String storeId);
