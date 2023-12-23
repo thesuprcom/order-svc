@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -45,8 +46,9 @@ public class CustomerOrderController {
     }
 
     @GetMapping("/list")
-    public ResponseEntity fetchPastOrders(@RequestParam(value = "page", defaultValue = "0") int page,
-                                          @RequestParam(value = "size", defaultValue = "10") int size) {
+    public ResponseEntity fetchPastOrders(
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.Direction.DESC, "id");
         Page<OrderEntity> orderEntityPage = orderService.fetchSenderOrderPastOrderList(pageable);
         CustomerOrderResponse customerOrderResponse = new CustomerOrderResponse();

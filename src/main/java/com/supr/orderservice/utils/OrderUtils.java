@@ -208,7 +208,15 @@ public class OrderUtils {
     }
 
     public static GreetingCard fetchGreetingCard(GreetingCardEntity greetingCardEntity) {
-        return objectMapper.convertValue(greetingCardEntity, GreetingCard.class);
+        GreetingCard greetingCard = new GreetingCard();
+        greetingCard.setGreetingCardCode(greetingCardEntity.getGreetingCardCode());
+        greetingCard.setGreetingCardImageUrl(greetingCardEntity.getGreetingCardImageUrl());
+        greetingCard.setGreetingCardMsg(greetingCardEntity.getGreetingCardMsg());
+        greetingCard.setGreetingCardName(greetingCardEntity.getGreetingCardName());
+        greetingCard.setGreetingCardOccasion(greetingCardEntity.getGreetingCardOccasion());
+        greetingCard.setGreetingCardImage(greetingCardEntity.getGreetingCardImage());
+        greetingCard.setReceiverName(greetingCardEntity.getReceiverName());
+        return greetingCard;
     }
 
     public static String fetchTime(Timestamp updatedAtTimestamp) {
