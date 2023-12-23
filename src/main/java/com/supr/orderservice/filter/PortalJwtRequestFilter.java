@@ -8,6 +8,7 @@ import com.supr.orderservice.utils.JwtTokenUtil;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
@@ -37,76 +39,95 @@ import static com.supr.orderservice.utils.PortalAuthConstants.UNABLE_TO_GET_JWT_
 
 public class PortalJwtRequestFilter extends OncePerRequestFilter {
 
-  private final JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final String requestPath;
 
-  private final PortalPermissionService portalPermissionService;
+    private final PortalPermissionService portalPermissionService;
 
-  private final Gson gson = new Gson();
+    private final Gson gson = new Gson();
+    @Value("${app.jwt.secret}")
+    private String secret;
 
-  public PortalJwtRequestFilter(JwtTokenUtil jwtTokenUtil,
-                                PortalPermissionService portalPermissionService) {
-    this.jwtTokenUtil = jwtTokenUtil;
-    this.portalPermissionService = portalPermissionService;
-  }
+    @Value("${customer.jwt.secret}")
+    private String customerSecret;
 
-  @Override
-  protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
-          throws ServletException, IOException {
-
-    Optional<String> requestTokenHeader = getHeader(request, AUTHORIZATION_HEADER);
-    String username;
-    String jwtToken;
-    if (requestTokenHeader.isPresent() && requestTokenHeader.get().startsWith(BEARER_PREFIX)) {
-      jwtToken = requestTokenHeader.get().substring(BEARER_PREFIX.length());
-      try {
-        username = jwtTokenUtil.getUsernameFromToken(jwtToken);
-      } catch (IllegalArgumentException e) {
-        logger.error(e);
-        setErrorHttpResponse(UNABLE_TO_GET_JWT_TOKEN, response);
-        return;
-      } catch (ExpiredJwtException e) {
-        logger.error(e);
-        setErrorHttpResponse(JWT_TOKEN_HAS_EXPIRED, response);
-        return;
-      } catch (MalformedJwtException | SignatureException e) {
-        logger.error(e);
-        setErrorHttpResponse(MALFORMED_JWT_TOKEN, response);
-        return;
-      }
-    } else {
-      setErrorHttpResponse(TOKEN_DOES_NOT_BEGIN_WITH_BEARER_STRING, response);
-      return;
+    public PortalJwtRequestFilter(JwtTokenUtil jwtTokenUtil,
+                                  String requestPath,
+                                  PortalPermissionService portalPermissionService) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.requestPath = requestPath;
+        this.portalPermissionService = portalPermissionService;
     }
 
-    if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
 
-      List<Permission> permissions = portalPermissionService.getUserPermissions(requestTokenHeader.get());
-      List<SimpleGrantedAuthority> authorities =
-              permissions.stream().map(permission -> new SimpleGrantedAuthority(permission.getUid()))
-                      .collect(Collectors.toList());
-      UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-              new UsernamePasswordAuthenticationToken(username, null, authorities);
+        Optional<String> requestTokenHeader = getHeader(request, AUTHORIZATION_HEADER);
+        String username;
+        String jwtToken;
+        if (requestTokenHeader.isPresent() && requestTokenHeader.get().startsWith(BEARER_PREFIX)) {
+            jwtToken = requestTokenHeader.get().substring(BEARER_PREFIX.length());
+            try {
+                if (request.getServletPath().startsWith(requestPath)) {
+                    username = jwtTokenUtil.getUsernameFromToken(jwtToken);
+                } else {
+                    username = jwtTokenUtil.getPublicUserId(jwtToken);
+                }
 
-      usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-      SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+            } catch (IllegalArgumentException e) {
+                logger.error(e);
+                setErrorHttpResponse(UNABLE_TO_GET_JWT_TOKEN, response);
+                return;
+            } catch (ExpiredJwtException e) {
+                logger.error(e);
+                setErrorHttpResponse(JWT_TOKEN_HAS_EXPIRED, response);
+                return;
+            } catch (MalformedJwtException | SignatureException e) {
+                logger.error(e);
+                setErrorHttpResponse(MALFORMED_JWT_TOKEN, response);
+                return;
+            }
+        } else {
+            setErrorHttpResponse(TOKEN_DOES_NOT_BEGIN_WITH_BEARER_STRING, response);
+            return;
+        }
+
+        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null
+                && request.getServletPath().startsWith(requestPath)) {
+
+            List<Permission> permissions = portalPermissionService.getUserPermissions(requestTokenHeader.get());
+            List<SimpleGrantedAuthority> authorities =
+                    permissions.stream().map(permission -> new SimpleGrantedAuthority(permission.getUid()))
+                            .collect(Collectors.toList());
+            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
+                    new UsernamePasswordAuthenticationToken(username, null, authorities);
+
+            usernamePasswordAuthenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+        } else {
+            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(
+                    username, null, null);
+            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        }
+
+        chain.doFilter(request, response);
     }
 
-    chain.doFilter(request, response);
-  }
+    private void setErrorHttpResponse(String message, HttpServletResponse response) throws IOException {
+        response.getWriter().write(getErrorBody(message));
+        response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString());
+        response.setStatus(HttpStatus.FORBIDDEN.value());
+    }
 
-  private void setErrorHttpResponse(String message, HttpServletResponse response) throws IOException {
-    response.getWriter().write(getErrorBody(message));
-    response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON.toString());
-    response.setStatus(HttpStatus.FORBIDDEN.value());
-  }
+    private Optional<String> getHeader(final HttpServletRequest request, final String headerName) {
+        return Optional.ofNullable(request.getHeader(headerName));
+    }
 
-  private Optional<String> getHeader(final HttpServletRequest request, final String headerName) {
-    return Optional.ofNullable(request.getHeader(headerName));
-  }
-
-  private String getErrorBody(String message) {
-    return gson.toJson(new PortalAuthExceptionResponse(PORTAL_AUTH_403, message));
-  }
+    private String getErrorBody(String message) {
+        return gson.toJson(new PortalAuthExceptionResponse(PORTAL_AUTH_403, message));
+    }
 
 
 }

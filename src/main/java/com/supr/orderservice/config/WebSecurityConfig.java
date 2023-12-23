@@ -55,12 +55,15 @@ public class WebSecurityConfig {
                 .authorizeRequests()
                 .antMatchers(SKIP_AUTH_URLS).permitAll() // Exclude this URL
                 // from the filter chain
+                .antMatchers("/api/v1/seller/order/**").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
-                .addFilterBefore(new PortalJwtRequestFilter(jwtTokenUtil, portalPermissionService),
-                        UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new PortalJwtRequestFilter(jwtTokenUtil, "/api/v1/seller/order",
+                                portalPermissionService), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new PortalJwtRequestFilter(jwtTokenUtil, "/*",
+                        portalPermissionService), UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();
     }
 }
