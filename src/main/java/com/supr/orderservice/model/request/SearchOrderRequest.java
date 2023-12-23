@@ -8,9 +8,12 @@ import javax.validation.constraints.NotEmpty;
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SearchOrderRequest {
+    @NotEmpty(message = "Order Id cannot be empty")
+    private String orderId;
     @NotEmpty(message = "Seller Id cannot be empty")
     private String sellerId;
-    private String orderId;
+    @NotEmpty(message = "Brand code cannot be empty")
+    private String brandCode;
     private String status;
     private String deliveryMethod;
 }

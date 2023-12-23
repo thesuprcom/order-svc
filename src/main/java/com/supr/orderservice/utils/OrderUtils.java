@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.supr.orderservice.entity.GreetingCardEntity;
 import com.supr.orderservice.entity.OrderEntity;
 import com.supr.orderservice.entity.OrderItemEntity;
+import com.supr.orderservice.entity.OrderItemStatusHistoryEntity;
 import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.enums.OrderItemStatus;
 import com.supr.orderservice.exception.OrderServiceException;
@@ -11,6 +12,7 @@ import com.supr.orderservice.model.GreetingCard;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.ItemPrice;
 import com.supr.orderservice.model.Misc;
+import com.supr.orderservice.model.OrderItemStatusHistory;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.Product;
 import com.supr.orderservice.model.ViewGiftItem;
@@ -153,8 +155,21 @@ public class OrderUtils {
     }
 
     public static List<ItemInfo> fetchItemInfos(List<OrderItemEntity> orderItems) {
-        return orderItems.stream().map(orderItemEntity ->
-                objectMapper.convertValue(orderItemEntity, ItemInfo.class)).collect(Collectors.toList());
+        return orderItems.stream().map(OrderUtils::fetchItemInfo).collect(Collectors.toList());
+    }
+
+    private static ItemInfo fetchItemInfo(OrderItemEntity orderItemEntity) {
+        ItemInfo itemInfo = orderItemEntity.getItemInfo();
+        itemInfo.setOrderItemStatusHistory(orderItemEntity.getOrderItemStatusHistories().stream().map(statusEntity ->
+                new OrderItemStatusHistory(statusEntity.getFromStatus().name(),
+                        statusEntity.getUpdatedAt().toString())).toList());
+        return itemInfo;
+    }
+
+    public static String fetchTotalAmount(List<OrderItemEntity> orderItems) {
+        return orderItems.stream()
+                .map(OrderItemEntity::getTotalPrice)
+                .reduce(BigDecimal.ZERO, BigDecimal::add).toString();
     }
 
     public static AcceptGiftResponse fetchAcceptGiftResponse(List<OrderItemEntity> orderItems, OrderEntity orderEntity) {

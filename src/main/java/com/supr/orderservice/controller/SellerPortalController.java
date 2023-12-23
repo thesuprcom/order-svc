@@ -29,20 +29,23 @@ import static com.supr.orderservice.utils.Constants.X_COUNTRY_CODE_HEADER_KEY;
 public class SellerPortalController {
     private final SellerPortalService sellerPortalService;
 
-    @GetMapping("/list/{seller-id}/{brand-code}")
+    @GetMapping("/list/{seller-id}/{brand-code}/{order-status}")
     public ResponseEntity getOrderList(@RequestHeader(name = X_COUNTRY_CODE_HEADER_KEY) String countryCode,
                                        @PathVariable(name = "seller-id") String sellerId,
                                        @PathVariable(name = "brand-code") String brandCode,
+                                       @PathVariable(name = "order-status") String orderStatus,
                                        @RequestParam(name = "days") int days,
                                        @RequestParam(value = "page", defaultValue = "0") int page,
                                        @RequestParam(value = "size", defaultValue = "20") int size) {
-        return new ResponseEntity(sellerPortalService.getOrderList(countryCode, sellerId, brandCode, days,
+        return new ResponseEntity(sellerPortalService.getOrderList(countryCode, sellerId, brandCode, orderStatus, days,
                 PageRequest.of(page, size, Sort.Direction.DESC, "id")), HttpStatus.OK);
     }
 
-    @GetMapping("/{order-id}")
-    public ResponseEntity getOrderDetail(@PathVariable(name = "order-id") String orderId) {
-        return new ResponseEntity(sellerPortalService.getOrderDetail(orderId), HttpStatus.OK);
+    @GetMapping("/{order-id}/{seller-id}/{brand-code}")
+    public ResponseEntity getOrderDetail(@PathVariable(name = "order-id") String orderId,
+                                         @PathVariable(name = "seller-id") String sellerId,
+                                         @PathVariable(name = "brand-code") String brandCode) {
+        return new ResponseEntity(sellerPortalService.getOrderDetail(orderId, sellerId, brandCode), HttpStatus.OK);
     }
 
     @PutMapping("/update")
@@ -55,9 +58,11 @@ public class SellerPortalController {
         return new ResponseEntity(sellerPortalService.markOrderShip(request), HttpStatus.OK);
     }
 
-    @GetMapping("/status-updates/{order-id}")
-    public ResponseEntity fetchStatusUpdates(@PathVariable(name = "order-id") String orderId) {
-        return new ResponseEntity(sellerPortalService.fetchStatusUpdates(orderId), HttpStatus.OK);
+    @GetMapping("/status-updates/{order-id}/{seller-id}/{brand-code}")
+    public ResponseEntity fetchStatusUpdates(@PathVariable(name = "order-id") String orderId,
+                                             @PathVariable(name = "seller-id") String sellerId,
+                                             @PathVariable(name = "brand-code") String brandCode) {
+        return new ResponseEntity(sellerPortalService.fetchStatusUpdates(orderId, sellerId, brandCode), HttpStatus.OK);
     }
 
     @PostMapping("/search")

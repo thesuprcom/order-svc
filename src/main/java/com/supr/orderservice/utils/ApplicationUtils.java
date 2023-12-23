@@ -34,7 +34,9 @@ public class ApplicationUtils {
         return Arrays
                 .asList(ExternalStatus.GIFT_CREATED, ExternalStatus.PROCESSING_ON_HOLD, ExternalStatus.SHIPPED,
                         ExternalStatus.DELIVERED, ExternalStatus.CANCELLED, ExternalStatus.PARTIALLY_DELIVERED,
-                        ExternalStatus.UNDELIVERED, ExternalStatus.PARTIALLY_SHIPPED,
+                        ExternalStatus.PAYMENT_FAILED, ExternalStatus.GIFT_SCHEDULED, ExternalStatus.GIFT_PLACED,
+                        ExternalStatus.UNDELIVERED, ExternalStatus.PARTIALLY_SHIPPED, ExternalStatus.PAYMENT_INITIATED,
+                        ExternalStatus.GIFT_SWAPPED,ExternalStatus.GIFT_OPENED,ExternalStatus.GIFT_UNDELIVERED,
                         ExternalStatus.CANCELLED_BY_SELLER, ExternalStatus.CANCELLED);
     }
 

@@ -288,6 +288,7 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
                 orderItem.setOrderItemQuantity(cartInfo.getQuantity());
                 orderItem.setCouponDetails(request.getUserCartDTO().getCouponDetails());
                 orderItem.setBrandId(cartInfo.getBrandCode());
+                orderItem.setBrandCode(cartInfo.getBrandCode());
                 orderItem.setProductId(cartInfo.getSkus());
                 orderItem.setProductTitle(cartInfo.getGiftTitle());
                 orderItem.setProductBrand(cartInfo.getBrandCode());

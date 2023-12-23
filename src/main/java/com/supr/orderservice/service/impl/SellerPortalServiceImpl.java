@@ -31,13 +31,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -54,42 +55,88 @@ public class SellerPortalServiceImpl implements SellerPortalService {
 
     @Override
     public PortalOrderDetailListResponse getOrderList(String countryCode, String sellerId, String brandCode,
-                                                      int days, Pageable pageable) {
-        List<ExternalStatus> externalStatuses = ApplicationUtils.getSellerPortalExternalStatus();
+                                                      String orderStatus, int days, Pageable pageable) {
         LocalDate startDate = LocalDate.now().minusDays(days);
         LocalDate endDate = LocalDate.now();
-        List<Object[]> orderCountList = orderRepository.
-                getOrderCountByStatusAndCountryCodeAndSellerIdAndDateGroupByStatus(externalStatuses, countryCode, startDate);
+        Date convertedEndDate = Date.from(endDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        Date convertedStartDate = Date.from(startDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
+        List<ExternalStatus> externalStatuses = getExternalStatusList(orderStatus);
+
+        List<Object[]> orderCountList = orderItemRepository.
+                getOrderCountByStatusAndCountryCodeAndSellerIdAndBrandCodeAndDateGroupByStatus(brandCode, sellerId,
+                        countryCode, convertedStartDate, externalStatuses);
         List<OrderCount> orderCounts = new ArrayList<>();
         long totalOrderCount = 0;
         for (Object[] result : orderCountList) {
-            String status = (String) result[0];
+            String status = ((ExternalStatus) result[0]).name();
             Long count = (Long) result[1];
             orderCounts.add(new OrderCount(status, count));
             totalOrderCount = totalOrderCount + count;
         }
-        Page<OrderEntity> orderEntities = orderRepository.
-                findOrdersByStatusAndCountryCodeAndSellerIdAndBrandIdAndDateRange(ExternalStatus.GIFT_CREATED,
-                        countryCode, startDate, endDate, pageable);
-        List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
-        long totalOrderItems = portalOrderDetails.stream()
-                .mapToInt(customObject -> customObject.getItemInfos().size()).sum();
+        orderCounts.add(new OrderCount("ALL", totalOrderCount));
+        Page<OrderItemEntity> orderEntitiesPage = orderItemRepository.
+                findOrdersByCountryCodeAndSellerIdAndBrandCodeAndDateRange(brandCode, sellerId,
+                        countryCode, convertedStartDate, convertedEndDate, pageable);
+        Map<OrderEntity, List<OrderItemEntity>> orderEntityListMap = orderEntitiesPage.stream()
+                .collect(Collectors.groupingBy(OrderItemEntity::getOrder));
+
+        List<PortalOrderDetail> portalOrderDetails =
+                orderEntityListMap.entrySet().stream().map(entry -> new PortalOrderDetail(entry.getKey(),
+                        entry.getValue(), sellerId, brandCode)).toList();
+        long completedCount = orderEntityListMap.values().stream()
+                .flatMap(List::stream)
+                .filter(orderItem -> "DELIVERED".equalsIgnoreCase(orderItem.getExternalStatus().getStatus()))
+                .count();
+
+        long returnedCount = orderEntityListMap.values().stream()
+                .flatMap(List::stream)
+                .filter(orderItem -> "GIFT_UNDELIVERED".equalsIgnoreCase(orderItem.getExternalStatus().getStatus()))
+                .count();
+
 
         PortalOrderDetailListResponse response = new PortalOrderDetailListResponse();
         response.setOrderDetails(portalOrderDetails);
         response.setOrderCount(orderCounts);
         response.setNoOfDays(days);
-        response.setTotalOrderCount(totalOrderCount);
-        response.setTotalOrderItems(totalOrderItems);
+        response.setTotalOrderCount(orderEntityListMap.size());
+        response.setTotalReturnOrderCount(returnedCount);
+        response.setTotalFulfilledOrderCount(completedCount);
+        response.setTotalOrderItems(orderEntityListMap.values().stream().mapToInt(List::size).sum());
         return response;
     }
 
+    private static List<ExternalStatus> getExternalStatusList(String orderStatus) {
+        List<ExternalStatus> externalStatuses;
+        if (orderStatus.equalsIgnoreCase("All")) {
+            externalStatuses = ApplicationUtils.getSellerPortalExternalStatus();
+        } else if (orderStatus.equalsIgnoreCase("Open")) {
+            externalStatuses = Arrays.asList(ExternalStatus.GIFT_ACCEPTED, ExternalStatus.PENDING,
+                    ExternalStatus.PROCESSING_ON_HOLD);
+        } else if (orderStatus.equalsIgnoreCase("Shipped")) {
+            externalStatuses = List.of(ExternalStatus.SHIPPED);
+        } else if (orderStatus.equalsIgnoreCase("Closed")) {
+            externalStatuses = Arrays.asList(ExternalStatus.DELIVERED,ExternalStatus.CANCELLED,
+                    ExternalStatus.CANCELLED_BY_SELLER);
+        } else if (orderStatus.equalsIgnoreCase("Queued")) {
+            externalStatuses = Arrays.asList(ExternalStatus.GIFT_CREATED, ExternalStatus.GIFT_SWAPPED,
+                    ExternalStatus.GIFT_PLACED, ExternalStatus.GIFT_SCHEDULED);
+        } else if (orderStatus.equalsIgnoreCase("Cancelled")) {
+            externalStatuses = List.of(ExternalStatus.CANCELLED_BY_SELLER);
+        } else {
+            externalStatuses = ApplicationUtils.getSellerPortalExternalStatus();
+        }
+        return externalStatuses;
+    }
+
     @Override
-    public PortalOrderDetailResponse getOrderDetail(String orderId) {
+    public PortalOrderDetailResponse getOrderDetail(String orderId, String sellerId, String brandCode) {
         PortalOrderDetailResponse response = new PortalOrderDetailResponse();
         OrderEntity order = orderRepository.findByOrderId(orderId);
         if (order != null) {
-            response.setPortalOrderDetail(new PortalOrderDetail(order));
+            List<OrderItemEntity> orderItemEntities =
+                    order.getOrderItemEntities().stream().filter(orderItemEntity -> orderItemEntity.getSellerId().equalsIgnoreCase(sellerId)
+                            && orderItemEntity.getBrandCode().equalsIgnoreCase(brandCode)).toList();
+            response.setPortalOrderDetail(new PortalOrderDetail(order, orderItemEntities, sellerId, brandCode));
             return response;
         } else {
             throw new OrderServiceException("Invalid orderId in the request!!");
@@ -102,7 +149,10 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         PortalUpdateOrderResponse response = new PortalUpdateOrderResponse();
         OrderEntity order = orderRepository.findByOrderId(request.getOrderId());
         if (order != null) {
-            List<OrderItemEntity> orderItemEntities = order.getOrderItemEntities();
+            List<OrderItemEntity> orderItemEntities =
+                    order.getOrderItemEntities().stream().filter(orderItemEntity ->
+                            orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
+                                    && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
             if (request.isOrderLevelTracking() && request.getOrderTrackingInfo() != null) {
                 order.setOrderTrackingInfo(request.getOrderTrackingInfo());
             }
@@ -120,7 +170,8 @@ public class SellerPortalServiceImpl implements SellerPortalService {
             orderItemRepository.saveAll(orderItemEntities);
             order.setUpdatedBy(request.getUpdatedBy());
             OrderEntity savedOrderEntity = orderRepository.save(order);
-            response.setPortalOrderDetail(new PortalOrderDetail(savedOrderEntity));
+            response.setPortalOrderDetail(new PortalOrderDetail(savedOrderEntity,
+                    savedOrderEntity.getOrderItemEntities(), request.getSellerId(), request.getBrandCode()));
             return response;
         } else {
             throw new OrderServiceException("Invalid orderId in the request!!");
@@ -136,7 +187,10 @@ public class SellerPortalServiceImpl implements SellerPortalService {
                 stateMachineManager.moveToNextState(order, EntityTypeEnum.ORDER.name(), request.getOrderStatus());
             }
             if (request.getItemStatusChanges() != null && request.getItemStatusChanges().size() > 0) {
-                List<OrderItemEntity> orderItemEntities = order.getOrderItemEntities();
+                List<OrderItemEntity> orderItemEntities =
+                        order.getOrderItemEntities().stream().filter(orderItemEntity ->
+                                orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
+                                        && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
                 Map<String, String> itemStatusChange =
                         request.getItemStatusChanges().stream().collect(Collectors
                                 .toMap(ItemStatusChange::getPskuCode, ItemStatusChange::getStatus));
@@ -147,7 +201,8 @@ public class SellerPortalServiceImpl implements SellerPortalService {
                     }
                 });
             }
-            response.setPortalOrderDetail(new PortalOrderDetail(order));
+            response.setPortalOrderDetail(new PortalOrderDetail(order, order.getOrderItemEntities(),
+                    request.getSellerId(), request.getBrandCode()));
             return response;
         } else {
             throw new OrderServiceException("Invalid orderId in the request!!");
@@ -177,12 +232,16 @@ public class SellerPortalServiceImpl implements SellerPortalService {
     }
 
     @Override
-    public PortalOrderStatusUpdatesResponse fetchStatusUpdates(String orderId) {
+    public PortalOrderStatusUpdatesResponse fetchStatusUpdates(String orderId, String sellerId, String brandCode) {
         PortalOrderStatusUpdatesResponse response = new PortalOrderStatusUpdatesResponse();
         List<OrderItemStatusHistoryEntity> orderItemStatus = new ArrayList<>();
         OrderEntity order = orderRepository.findByOrderId(orderId);
         if (order != null) {
-            order.getOrderItemEntities().forEach(orderItemEntity -> {
+            List<OrderItemEntity> orderItemEntities =
+                    order.getOrderItemEntities().stream().filter(orderItemEntity ->
+                            orderItemEntity.getSellerId().equalsIgnoreCase(sellerId)
+                                    && orderItemEntity.getBrandCode().equalsIgnoreCase(brandCode)).toList();
+            orderItemEntities.forEach(orderItemEntity -> {
                 List<OrderItemStatusHistoryEntity> itemStatusHistory = orderItemStatusHistoryRepository
                         .findOrderItemStatusHistoryEntityByOrderItem(orderItemEntity);
                 orderItemStatus.addAll(itemStatusHistory);
@@ -200,7 +259,12 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         if (request.getOrderId() != null && (request.getStatus() != null || request.getDeliveryMethod() != null)) {
             OrderEntity order = orderRepository.findByOrderId(request.getOrderId());
             if (order != null) {
-                PortalOrderDetail orderDetail = new PortalOrderDetail(order);
+                List<OrderItemEntity> orderItemEntities =
+                        order.getOrderItemEntities().stream().filter(orderItemEntity ->
+                                orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
+                                        && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
+                PortalOrderDetail orderDetail = new PortalOrderDetail(order, orderItemEntities,
+                        request.getSellerId(), request.getBrandCode());
                 response.setOrderDetails(List.of(orderDetail));
                 return response;
             } else {
@@ -208,9 +272,14 @@ public class SellerPortalServiceImpl implements SellerPortalService {
             }
         }
         if (request.getStatus() != null) {
-            List<OrderEntity> orderEntities =
-                    orderRepository.findByStatus(OrderUtils.fetchExternalStatus(request.getStatus()));
-            List<PortalOrderDetail> portalOrderDetails = orderEntities.stream().map(PortalOrderDetail::new).toList();
+            List<OrderItemEntity> orderEntities =
+                    orderItemRepository.findAllByExternalStatusAndSellerIdAndBrandCode(OrderUtils.fetchExternalStatus(request.getStatus()),
+                            request.getSellerId(), request.getBrandCode());
+            Map<OrderEntity, List<OrderItemEntity>> orderEntityListMap = orderEntities.stream()
+                    .collect(Collectors.groupingBy(OrderItemEntity::getOrder));
+            List<PortalOrderDetail> portalOrderDetails =
+                    orderEntityListMap.entrySet().stream().map(order -> new PortalOrderDetail(order.getKey(),
+                            order.getValue(), request.getSellerId(), request.getBrandCode())).toList();
             response.setOrderDetails(portalOrderDetails);
             return response;
         }

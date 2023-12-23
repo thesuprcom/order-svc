@@ -13,6 +13,10 @@ import java.util.List;
 public class PortalUpdateOrderRequest {
     @NotEmpty(message = "Order Id cannot be empty")
     private String orderId;
+    @NotEmpty(message = "Seller Id cannot be empty")
+    private String sellerId;
+    @NotEmpty(message = "Brand code cannot be empty")
+    private String brandCode;
     private String status;
     private boolean isOrderLevelTracking;
     private TrackingInfo orderTrackingInfo;

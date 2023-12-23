@@ -50,10 +50,8 @@ public class OrderItemEntity extends OrderBaseEntity{
     @JoinColumn(name = "order_id")
     private OrderEntity order;
     private String childOrderId;
-
     @Column(updatable = false)
     private String countryCode;
-
     private String brandId;
     private String brandCode;
     private String sellerId;
@@ -63,70 +61,45 @@ public class OrderItemEntity extends OrderBaseEntity{
     private String warranty;
     @Enumerated(EnumType.STRING)
     private OrderItemType orderItemType;
-
     private String partnerSku;
-
     private String productTitle;
     private String productColour;
     private String productFullTitle;
-
     private String productBrand;
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private List<ImageUrl> images;
-
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private SellerInfo sellerInfo;
-
     private String productDescription;
-
     private String productFamily;
-
     private String productSubtype;
-
     private String productType;
-
     private String parentSku;
-
     private String cancellationReason;
-
     private String replacementId;
-
     private LogisticsCarrierStatus logisticsCarrierStatus;
-
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private Shipping shipping;
-
     private BigDecimal orderItemQuantity;
-
     private BigDecimal totalPrice;
-
     private BigDecimal originalOrderItemQuantity;
-
     private BigDecimal merchantAcceptedQuantity;
-
     private BigDecimal returnUpdatableQuantity;
-
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private OrderItemEntity referenceOrderItem;
-
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private ItemInfo itemInfo;
-
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private OrderPrice price;
-
     @Type(type = "json")
     @Column(name="item_tracking_info",columnDefinition = "json")
     private TrackingInfo itemTrackingInfo;
-
     private String updatedBy;
-
-
     @JsonIgnore
     @NotAudited
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "orderItem")
