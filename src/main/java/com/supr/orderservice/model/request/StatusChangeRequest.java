@@ -1,6 +1,7 @@
 package com.supr.orderservice.model.request;
 
 import com.supr.orderservice.model.ItemStatusChange;
+import com.supr.orderservice.model.TrackingInfo;
 import lombok.Data;
 
 import javax.validation.constraints.NotEmpty;
@@ -14,6 +15,9 @@ public class StatusChangeRequest {
     private String sellerId;
     @NotEmpty(message = "Brand code cannot be empty")
     private String brandCode;
-    private List<ItemStatusChange> itemStatusChanges;
-    private String orderStatus;
+    private List<ItemStatusChange> itemUpdates;
+    private boolean isOrderLevelTracking;
+    private TrackingInfo orderTrackingInfo;
+    @NotEmpty(message = "Updated By cannot be empty")
+    private String updatedBy;
 }

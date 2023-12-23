@@ -156,7 +156,7 @@ public class OrderServiceImpl implements OrderService {
                                     .orderItemId(orderItem.getOrderItemId())
                                     .status(orderItem.getStatus())
                                     .price(orderItem.getPrice())
-                                    .quantity(orderItem.getMerchantAcceptedQuantity())
+                                    .quantity(orderItem.getOrderItemQuantityShipped())
                                     .externalStatus(orderItem.getExternalStatus())
                                     .country(orderItem.getOrder().getShippingAddress().getCountry())
                                     .city(orderItem.getSellerInfo().getCity())

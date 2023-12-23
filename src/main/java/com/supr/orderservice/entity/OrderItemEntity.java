@@ -84,9 +84,10 @@ public class OrderItemEntity extends OrderBaseEntity{
     @Column(columnDefinition = "json")
     private Shipping shipping;
     private BigDecimal orderItemQuantity;
+    private BigDecimal orderItemQuantityShipped;
+    private BigDecimal orderItemQuantityCancelled;
+    private BigDecimal orderItemQuantityRemaining;
     private BigDecimal totalPrice;
-    private BigDecimal originalOrderItemQuantity;
-    private BigDecimal merchantAcceptedQuantity;
     private BigDecimal returnUpdatableQuantity;
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     private OrderItemEntity referenceOrderItem;
@@ -112,18 +113,6 @@ public class OrderItemEntity extends OrderBaseEntity{
     public void setOrderItemQuantity(BigDecimal orderItemQuantity) {
         if (orderItemQuantity != null) {
             this.orderItemQuantity = ApplicationUtils.roundUpToThreeDecimalPlaces(orderItemQuantity);
-        }
-    }
-
-    public void setOriginalOrderItemQuantity(BigDecimal originalOrderItemQuantity) {
-        if (originalOrderItemQuantity != null) {
-            this.originalOrderItemQuantity = ApplicationUtils.roundUpToThreeDecimalPlaces(originalOrderItemQuantity);
-        }
-    }
-
-    public void setMerchantAcceptedQuantity(BigDecimal merchantAcceptedQuantity) {
-        if (merchantAcceptedQuantity != null) {
-            this.merchantAcceptedQuantity = ApplicationUtils.roundUpToTwoDecimalPlaces(merchantAcceptedQuantity);
         }
     }
 

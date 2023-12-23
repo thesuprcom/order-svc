@@ -1,6 +1,9 @@
 package com.supr.orderservice.model.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import com.supr.orderservice.model.Address;
 import com.supr.orderservice.model.ItemChangeDto;
 import com.supr.orderservice.model.TrackingInfo;
 import lombok.Data;
@@ -10,6 +13,7 @@ import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class PortalUpdateOrderRequest {
     @NotEmpty(message = "Order Id cannot be empty")
     private String orderId;
@@ -17,10 +21,10 @@ public class PortalUpdateOrderRequest {
     private String sellerId;
     @NotEmpty(message = "Brand code cannot be empty")
     private String brandCode;
-    private String status;
-    private boolean isOrderLevelTracking;
-    private TrackingInfo orderTrackingInfo;
-    private List<ItemChangeDto> itemChangeDto;
+    private Address shippingAddress;
+    private String notes;
+    private String contactEmail;
+    private String contactPhone;
     @NotEmpty(message = "Updated By cannot be empty")
     private String updatedBy;
 }

@@ -5,12 +5,15 @@ import com.supr.orderservice.entity.OrderItemEntity;
 import com.supr.orderservice.entity.OrderItemStatusHistoryEntity;
 import com.supr.orderservice.enums.EntityTypeEnum;
 import com.supr.orderservice.enums.ExternalStatus;
+import com.supr.orderservice.enums.OrderChangeEvent;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.ItemChangeDto;
 import com.supr.orderservice.model.ItemStatusChange;
 import com.supr.orderservice.model.OrderCount;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.PortalOrderDetail;
+import com.supr.orderservice.model.TrackingInfo;
+import com.supr.orderservice.model.UserInfo;
 import com.supr.orderservice.model.request.PortalUpdateOrderRequest;
 import com.supr.orderservice.model.request.SearchOrderRequest;
 import com.supr.orderservice.model.request.StatusChangeRequest;
@@ -41,6 +44,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -115,7 +119,7 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         } else if (orderStatus.equalsIgnoreCase("Shipped")) {
             externalStatuses = List.of(ExternalStatus.SHIPPED);
         } else if (orderStatus.equalsIgnoreCase("Closed")) {
-            externalStatuses = Arrays.asList(ExternalStatus.DELIVERED,ExternalStatus.CANCELLED,
+            externalStatuses = Arrays.asList(ExternalStatus.DELIVERED, ExternalStatus.CANCELLED,
                     ExternalStatus.CANCELLED_BY_SELLER);
         } else if (orderStatus.equalsIgnoreCase("Queued")) {
             externalStatuses = Arrays.asList(ExternalStatus.GIFT_CREATED, ExternalStatus.GIFT_SWAPPED,
@@ -149,29 +153,28 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         PortalUpdateOrderResponse response = new PortalUpdateOrderResponse();
         OrderEntity order = orderRepository.findByOrderId(request.getOrderId());
         if (order != null) {
+            UserInfo receiver = order.getReceiver();
+            if (request.getContactEmail() != null) {
+                receiver.setEmailId(request.getContactEmail());
+            }
+            if (request.getContactPhone() != null) {
+                receiver.setPhoneNumber(request.getContactPhone());
+            }
+            if (request.getShippingAddress() != null) {
+                order.setShippingAddress(request.getShippingAddress());
+            }
+            if (request.getNotes() != null) {
+                order.setNotes(request.getNotes());
+            }
+            order.setUpdatedBy(request.getUpdatedBy());
             List<OrderItemEntity> orderItemEntities =
                     order.getOrderItemEntities().stream().filter(orderItemEntity ->
                             orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
                                     && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
-            if (request.isOrderLevelTracking() && request.getOrderTrackingInfo() != null) {
-                order.setOrderTrackingInfo(request.getOrderTrackingInfo());
-            }
-            if (request.getItemChangeDto() != null && request.getItemChangeDto().size() > 0) {
-                orderItemEntities = updateTheOrderItemsFromSeller(request.getItemChangeDto(), orderItemEntities, order);
-            }
-            if (request.getStatus() != null) {
-                stateMachineManager.moveToNextState(order, EntityTypeEnum.ORDER.name(), request.getStatus());
-                orderItemEntities.forEach(orderItemEntity -> {
-                    stateMachineManager.moveToNextState(orderItemEntity, EntityTypeEnum.ORDER_ITEM.name(),
-                            request.getStatus());
-                    orderItemEntity.setUpdatedBy(request.getUpdatedBy());
-                });
-            }
-            orderItemRepository.saveAll(orderItemEntities);
             order.setUpdatedBy(request.getUpdatedBy());
             OrderEntity savedOrderEntity = orderRepository.save(order);
             response.setPortalOrderDetail(new PortalOrderDetail(savedOrderEntity,
-                    savedOrderEntity.getOrderItemEntities(), request.getSellerId(), request.getBrandCode()));
+                    orderItemEntities, request.getSellerId(), request.getBrandCode()));
             return response;
         } else {
             throw new OrderServiceException("Invalid orderId in the request!!");
@@ -179,56 +182,60 @@ public class SellerPortalServiceImpl implements SellerPortalService {
     }
 
     @Override
-    public PortalOrderDetailResponse markOrderShip(StatusChangeRequest request) {
+    public PortalOrderDetailResponse markOrderShipped(StatusChangeRequest request) {
         PortalOrderDetailResponse response = new PortalOrderDetailResponse();
         OrderEntity order = orderRepository.findByOrderId(request.getOrderId());
+        Map<String, ItemStatusChange> itemStatusChangeMap =
+                request.getItemUpdates().stream().collect(Collectors.toMap(ItemStatusChange::getOrderItemId,
+                        Function.identity()));
+        AtomicBoolean isPartialShipped = new AtomicBoolean(false);
         if (order != null) {
-            if (request.getOrderStatus() != null) {
-                stateMachineManager.moveToNextState(order, EntityTypeEnum.ORDER.name(), request.getOrderStatus());
+            order.setUpdatedBy(request.getUpdatedBy());
+            order.getOrderItemEntities().forEach(orderItemEntity -> {
+                ItemStatusChange itemStatusChange = itemStatusChangeMap.get(orderItemEntity.getOrderItemId());
+                if (itemStatusChange.getQuantityShipped() < orderItemEntity.getOrderItemQuantity().intValue()) {
+                    int remainQuantity =
+                            orderItemEntity.getOrderItemQuantity().intValue() - itemStatusChange.getQuantityShipped();
+                    orderItemEntity.setOrderItemQuantityShipped(orderItemEntity.getOrderItemQuantity());
+                    orderItemEntity.setOrderItemQuantityCancelled(BigDecimal.ZERO);
+                    orderItemEntity.setOrderItemQuantityRemaining(new BigDecimal(remainQuantity));
+                    orderItemEntity.setUpdatedBy(request.getUpdatedBy());
+                    TrackingInfo trackingInfo = request.isOrderLevelTracking() ? request.getOrderTrackingInfo() :
+                            itemStatusChange.getItemTrackingInfo();
+                    orderItemEntity.setItemTrackingInfo(trackingInfo);
+                    orderItemRepository.save(orderItemEntity);
+                    stateMachineManager.moveToNextState(orderItemEntity, EntityTypeEnum.ORDER_ITEM.name(),
+                            OrderChangeEvent.GIFT_PARTIALLY_SHIPPED.name());
+                    isPartialShipped.set(true);
+                } else {
+                    orderItemEntity.setOrderItemQuantityShipped(orderItemEntity.getOrderItemQuantity());
+                    orderItemEntity.setOrderItemQuantityCancelled(BigDecimal.ZERO);
+                    orderItemEntity.setOrderItemQuantityRemaining(BigDecimal.ZERO);
+                    orderItemEntity.setUpdatedBy(request.getUpdatedBy());
+                    TrackingInfo trackingInfo = request.isOrderLevelTracking() ? request.getOrderTrackingInfo() :
+                            itemStatusChange.getItemTrackingInfo();
+                    orderItemEntity.setItemTrackingInfo(trackingInfo);
+                    stateMachineManager.moveToNextState(orderItemEntity, EntityTypeEnum.ORDER_ITEM.name(),
+                            OrderChangeEvent.GIFT_SHIPPED.name());
+                    orderItemRepository.save(orderItemEntity);
+                }
+            });
+            if (isPartialShipped.get()) {
+                stateMachineManager.moveToNextState(order, EntityTypeEnum.ORDER.name(), OrderChangeEvent.GIFT_PARTIALLY_SHIPPED.name());
+            } else {
+                stateMachineManager.moveToNextState(order, EntityTypeEnum.ORDER.name(), OrderChangeEvent.GIFT_SHIPPED.name());
             }
-            if (request.getItemStatusChanges() != null && request.getItemStatusChanges().size() > 0) {
-                List<OrderItemEntity> orderItemEntities =
-                        order.getOrderItemEntities().stream().filter(orderItemEntity ->
-                                orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
-                                        && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
-                Map<String, String> itemStatusChange =
-                        request.getItemStatusChanges().stream().collect(Collectors
-                                .toMap(ItemStatusChange::getPskuCode, ItemStatusChange::getStatus));
-                orderItemEntities.forEach(orderItemEntity -> {
-                    if (itemStatusChange.containsKey(orderItemEntity.getPskuCode())) {
-                        stateMachineManager.moveToNextState(orderItemEntity, EntityTypeEnum.ORDER_ITEM.name(),
-                                itemStatusChange.get(orderItemEntity.getPskuCode()));
-                    }
-                });
-            }
-            response.setPortalOrderDetail(new PortalOrderDetail(order, order.getOrderItemEntities(),
+
+            List<OrderItemEntity> orderItemEntities =
+                    order.getOrderItemEntities().stream().filter(orderItemEntity ->
+                            orderItemEntity.getSellerId().equalsIgnoreCase(request.getSellerId())
+                                    && orderItemEntity.getBrandCode().equalsIgnoreCase(request.getBrandCode())).toList();
+            response.setPortalOrderDetail(new PortalOrderDetail(order, orderItemEntities,
                     request.getSellerId(), request.getBrandCode()));
             return response;
         } else {
             throw new OrderServiceException("Invalid orderId in the request!!");
         }
-    }
-
-    private List<OrderItemEntity> updateTheOrderItemsFromSeller(List<ItemChangeDto> itemChangeDto,
-                                                                List<OrderItemEntity> orderItemEntities,
-                                                                OrderEntity orderEntity) {
-        List<OrderItemEntity> orderItemEntityList = new ArrayList<>();
-        Map<String, ItemChangeDto> itemChangeDtoMap =
-                itemChangeDto.stream().collect(Collectors.toMap(ItemChangeDto::getPskuCode,
-                        Function.identity()));
-        for (OrderItemEntity orderItem : orderItemEntities) {
-            if (itemChangeDtoMap.containsKey(orderItem.getPskuCode())) {
-                ItemChangeDto itemChange = itemChangeDtoMap.get(orderItem.getPskuCode());
-                orderItem.setOrderItemQuantity(new BigDecimal(itemChange.getQuantity()));
-                if (itemChange.getItemTrackingInfo() != null) {
-                    orderItem.setItemTrackingInfo(itemChange.getItemTrackingInfo());
-                }
-            }
-            orderItemEntityList.add(orderItem);
-        }
-        OrderPrice orderPrice = OrderUtils.reCalculatePrice(orderItemEntityList);
-        orderEntity.setPrice(orderPrice);
-        return orderItemEntityList;
     }
 
     @Override
@@ -285,4 +292,5 @@ public class SellerPortalServiceImpl implements SellerPortalService {
         }
         return new PortalOrderSearchResponse(Collections.emptyList());
     }
+
 }

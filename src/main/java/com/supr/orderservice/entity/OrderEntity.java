@@ -90,6 +90,7 @@ public class OrderEntity extends OrderBaseEntity {
     private String invitationLink;
     private String receiverEmail;
     private String receiverPhone;
+    private String notes;
     private boolean isOrderScheduled;
     private Timestamp scheduledDate;
     private LogisticsCarrierStatus logisticsCarrierStatus;

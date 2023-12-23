@@ -53,9 +53,9 @@ public class SellerPortalController {
         return new ResponseEntity(sellerPortalService.updateOrder(portalUpdateOrderRequest), HttpStatus.OK);
     }
 
-    @PutMapping("/change-status")
+    @PutMapping("/mark-shipped")
     public ResponseEntity markOrderShip(@RequestBody StatusChangeRequest request) {
-        return new ResponseEntity(sellerPortalService.markOrderShip(request), HttpStatus.OK);
+        return new ResponseEntity(sellerPortalService.markOrderShipped(request), HttpStatus.OK);
     }
 
     @GetMapping("/status-updates/{order-id}/{seller-id}/{brand-code}")

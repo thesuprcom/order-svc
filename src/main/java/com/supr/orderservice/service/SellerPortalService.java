@@ -18,9 +18,10 @@ public interface SellerPortalService {
 
     PortalUpdateOrderResponse updateOrder(PortalUpdateOrderRequest portalUpdateOrderRequest);
 
-    PortalOrderDetailResponse markOrderShip(StatusChangeRequest request);
+    PortalOrderDetailResponse markOrderShipped(StatusChangeRequest request);
 
     PortalOrderStatusUpdatesResponse fetchStatusUpdates(String orderId, String sellerId, String brandCode);
 
     PortalOrderSearchResponse searchOrder(SearchOrderRequest searchOrderRequest);
+
 }

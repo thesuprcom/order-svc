@@ -163,6 +163,12 @@ public class OrderUtils {
         itemInfo.setOrderItemStatusHistory(orderItemEntity.getOrderItemStatusHistories().stream().map(statusEntity ->
                 new OrderItemStatusHistory(statusEntity.getFromStatus().name(),
                         statusEntity.getUpdatedAt().toString())).toList());
+        itemInfo.setOrderItemId(orderItemEntity.getOrderItemId());
+        itemInfo.setChildOrderId(orderItemEntity.getChildOrderId());
+        itemInfo.setOrderItemQuantityShipped(orderItemEntity.getOrderItemQuantityShipped());
+        itemInfo.setOrderItemQuantityCancelled(orderItemEntity.getOrderItemQuantityCancelled());
+        itemInfo.setOrderItemQuantityRemaining(orderItemEntity.getOrderItemQuantityRemaining());
+        itemInfo.setTrackingInfo(orderItemEntity.getItemTrackingInfo());
         return itemInfo;
     }
 

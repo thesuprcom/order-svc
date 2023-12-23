@@ -32,11 +32,16 @@ public class ItemInfo implements Serializable {
     private SellerInfo sellerInfo;
     @NotNull
     private BigDecimal quantity;
+    private BigDecimal orderItemQuantityShipped;
+    private BigDecimal orderItemQuantityCancelled;
+    private BigDecimal orderItemQuantityRemaining;
     private String giftCategory;
     private String giftDescription;
     private BigDecimal originalPrice;
     private BigDecimal discountPrice;
     private BigDecimal shippingPrice;
+    private String orderItemId;
+    private String childOrderId;
     private List<ImageUrl> giftImages;
     private String size;
     private String sizeUnit;
@@ -44,6 +49,8 @@ public class ItemInfo implements Serializable {
     private OrderPrice itemPriceDetails;
     private TrackingInfo trackingInfo;
     private String itemStatus;
+
+
 
     private List<OrderItemStatusHistory> orderItemStatusHistory;
 
