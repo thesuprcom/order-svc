@@ -16,6 +16,7 @@ import com.supr.orderservice.repository.CardDetailsRepository;
 import com.supr.orderservice.service.OrderInventoryManagementService;
 import com.supr.orderservice.service.OrderService;
 import com.supr.orderservice.service.external.MamoPayServiceClient;
+import com.supr.orderservice.utils.GiftSendModeUtility;
 import com.supr.orderservice.utils.TokenUtility;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -44,17 +45,17 @@ public class MamoPaymentController {
 
     @Value("${payment.gateway.access-token}")
     private String mamoPayAccessToken;
-
     private final TokenUtility tokenUtility;
     private final OrderService orderService;
+    private final GiftSendModeUtility giftSendModeUtility;
     private final MamoPayServiceClient mamoPayServiceClient;
     private final CardDetailsRepository cardDetailsRepository;
     private final OrderInventoryManagementService orderInventory;
 
 
     @PostMapping("webhook/{webhook-identifier}")
-    public void handleMamoPayebhook(@PathVariable("webhook-identifier") String webhookIdentifier,
-                                    @RequestBody String payload) {
+    public void handleMamoPayWebhook(@PathVariable("webhook-identifier") String webhookIdentifier,
+                                     @RequestBody String payload) {
 
     }
 
@@ -72,6 +73,14 @@ public class MamoPaymentController {
                 "pgStatus : {}", orderId, paymentLinkId, userType, status);
         MamoPayChargeDetailsResponse response = mamoPayServiceClient.fetchChargeDetails(chargeUID, mamoPayAccessToken);
         OrderEntity order = validateRequest(token, paymentLinkId, orderId, userId, userType);
+        if (userType.equalsIgnoreCase(OrderType.SENDER.name())) {
+            switch (order.getGiftSentOption()) {
+                case EMAIL -> giftSendModeUtility.sendEmailForGift(order);
+                case PHONE_NUMBER -> giftSendModeUtility.sendGiftOnPhone(order);
+                case INVITATION_LINK -> giftSendModeUtility.sendGiftOnInvitationLink(order);
+                case DIRECT_ADDRESS -> giftSendModeUtility.sendGiftDirectlyOnAddress(order);
+            }
+        }
         createCardDetails(response, order);
         TransactionEntity transaction = order.getTransaction();
         transaction.setPgTransactionId(transactionId);
@@ -81,10 +90,6 @@ public class MamoPaymentController {
         transaction.setPgOrderCreatedAt(createAt);
         order.setTransaction(transaction);
         order = orderService.save(order);
-        StateMachineType stateMachineType = userType.equalsIgnoreCase(OrderType.SENDER.name()) ?
-                StateMachineType.SENDER : StateMachineType.RECEIVER;
-        orderService.changeOrderState(order, stateMachineType.name(), OrderChangeEvent.SENDER_PAYMENT_SUCCESS.name(), true,
-                StateChangeReason.PAYMENT_SUCCESS.getReason());
         orderInventory.updateStoreOrderQuantity(order);
 
     }

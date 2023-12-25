@@ -45,4 +45,7 @@ public final class Constants {
     public static final String GIFT_SWAPPED = "GIFT_SWAPPED";
     public static final String ACCEPTED_GIFT_WITHOUT_SWAP = "ACCEPTED_GIFT_WITHOUT_SWAP";
     public static final String ACCEPTED_GIFT_SWAP = "ACCEPTED_GIFT_SWAP";
+    public static final String NOTIFICATION_SENDER_NAME = "ORDER_SERVICE";
+    public static final String USER_NAME_VARIABLE_NAME = "NAME";
+    public static final String INVITATION_LINK_VARIABLE_NAME = "INVITATION_LINK";
 }

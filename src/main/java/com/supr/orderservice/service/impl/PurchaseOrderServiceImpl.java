@@ -65,7 +65,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static com.supr.orderservice.enums.CouponInventoryUpdateType.USER_LEVEL_AND_COUPON_LEVEL;
-import static com.supr.orderservice.utils.Constants.COUPON_DISCOUNT_IS_NOT_APPLICABLE_ON_THIS_PAYMENT_METHOD;
 import static com.supr.orderservice.utils.DateUtils.getScheduledTimestamp;
 
 @Slf4j
