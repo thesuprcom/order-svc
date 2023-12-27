@@ -55,6 +55,12 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
     @Value("${order.external-base-url}")
     private String orderServiceBaseUrl;
 
+    @Value("${mamo-pay.failure-url}")
+    private String mamoPayFailureURL;
+
+    @Value("${mamo-pay.success-url}")
+    private String mamoPaySuccessUrl;
+
     @Value("${payment.gateway.access-token}")
     private String mamoPayAccessToken;
 
@@ -231,11 +237,11 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
     }
 
     private String fetchPaymentSuccessLink() {
-        return orderServiceBaseUrl + "/api/v1/payment-gateway/success";
+        return mamoPaySuccessUrl;
     }
 
     private String fetchPaymentFailureLink() {
-        return orderServiceBaseUrl + "/api/v1/payment-gateway/failed";
+        return mamoPayFailureURL;
     }
 
     private String fetchAmountCurrency(String currencyCode) {
