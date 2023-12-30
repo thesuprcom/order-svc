@@ -22,6 +22,7 @@ import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.CardDetails;
 import com.supr.orderservice.model.CouponDetails;
 import com.supr.orderservice.model.GreetingCard;
+import com.supr.orderservice.model.GreetingCardMessage;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.PriceDetails;
@@ -243,16 +244,18 @@ public class PurchaseOrderServiceImpl implements PurchaseOrderService {
     private GreetingCardEntity fetchGreetingCard(OrderEntity order, PurchaseOrderRequest request) {
         deleteAllExistingGreetingCardItems(order.getId());
         GreetingCard greetingCardReq = request.getUserCartDTO().getGreetingCard();
+        GreetingCardMessage greetingCardMessage = request.getUserCartDTO().getGreetingCardMessage();
         GreetingCardEntity greetingCard = new GreetingCardEntity();
         greetingCard.setOrder(order);
-        greetingCard.setGreetingCardMsg(greetingCardReq.getGreetingCardMsg());
-        greetingCard.setGreetingCardCode(greetingCardReq.getGreetingCardCode());
-        greetingCard.setGreetingCardName(greetingCardReq.getGreetingCardName());
-        greetingCard.setGreetingCardOccasion(greetingCardReq.getGreetingCardOccasion());
         greetingCard.setGreetingCardStatus(GreetingCardStatus.CREATED);
+        greetingCard.setGreetingCardMsg(greetingCardMessage.getGiftMessage());
+        greetingCard.setReceiverFirstName(greetingCardMessage.getRecipientFirstName());
+        greetingCard.setReceiverLastName(greetingCardMessage.getRecipientLastName());
+        greetingCard.setReceiverName(greetingCardMessage.getRecipientFirstName() + " " + greetingCardMessage.getRecipientLastName());
+        greetingCard.setGreetingCardCode(greetingCardReq.getGreetingCardId());
+        greetingCard.setGreetingCardOccasion(greetingCardReq.getGreetingCardOccasion());
+        greetingCard.setSenderName(order.getSender().getFirstName() +" "+order.getSender().getLastName());
         greetingCard.setGreetingCardImage(greetingCardReq.getGreetingCardImage());
-        greetingCard.setGreetingCardImageUrl(greetingCardReq.getGreetingCardImageUrl());
-        greetingCard.setReceiverName(greetingCardReq.getReceiverName());
         return greetingCard;
     }
 

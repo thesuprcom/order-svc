@@ -9,6 +9,7 @@ import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.enums.OrderItemStatus;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.GreetingCard;
+import com.supr.orderservice.model.GreetingCardMessage;
 import com.supr.orderservice.model.ItemInfo;
 import com.supr.orderservice.model.ItemPrice;
 import com.supr.orderservice.model.Misc;
@@ -50,7 +51,7 @@ public class OrderUtils {
                 .from(ApplicationUtils.fetchFullName(order.getSender()))
                 .to(ApplicationUtils.fetchFullName(order.getReceiver()))
                 .senderName(order.getSender().getFirstName())
-                .greetingEnvelopUrl(greetingCard.getGreetingEnvelopUrl())
+                .greetingEnvelopUrl(greetingCard.getGreetingCardImage())
                 .greetingCardImage(greetingCard.getGreetingCardImage()).orderId(order.getOrderId()).build();
     }
 
@@ -121,12 +122,12 @@ public class OrderUtils {
 
     public static OrderPrice reCalculatePrice(List<OrderItemEntity> orderItems) {
         BigDecimal totalPrice = new BigDecimal(0);
-        BigDecimal totalWalletPrice= new BigDecimal(0);
-        BigDecimal finalPrice= new BigDecimal(0);
-        BigDecimal totalTax= new BigDecimal(0);
-        BigDecimal totalDiscount= new BigDecimal(0);
-        BigDecimal totalCouponDiscount= new BigDecimal(0);
-        BigDecimal totalShipping= new BigDecimal(0);
+        BigDecimal totalWalletPrice = new BigDecimal(0);
+        BigDecimal finalPrice = new BigDecimal(0);
+        BigDecimal totalTax = new BigDecimal(0);
+        BigDecimal totalDiscount = new BigDecimal(0);
+        BigDecimal totalCouponDiscount = new BigDecimal(0);
+        BigDecimal totalShipping = new BigDecimal(0);
 
         for (OrderItemEntity orderItem : orderItems) {
             OrderPrice orderPrice = orderItem.getPrice();
@@ -209,13 +210,9 @@ public class OrderUtils {
 
     public static GreetingCard fetchGreetingCard(GreetingCardEntity greetingCardEntity) {
         GreetingCard greetingCard = new GreetingCard();
-        greetingCard.setGreetingCardCode(greetingCardEntity.getGreetingCardCode());
-        greetingCard.setGreetingCardImageUrl(greetingCardEntity.getGreetingCardImageUrl());
-        greetingCard.setGreetingCardMsg(greetingCardEntity.getGreetingCardMsg());
-        greetingCard.setGreetingCardName(greetingCardEntity.getGreetingCardName());
+        greetingCard.setGreetingCardId(greetingCardEntity.getGreetingCardCode());
         greetingCard.setGreetingCardOccasion(greetingCardEntity.getGreetingCardOccasion());
         greetingCard.setGreetingCardImage(greetingCardEntity.getGreetingCardImage());
-        greetingCard.setReceiverName(greetingCardEntity.getReceiverName());
         return greetingCard;
     }
 
@@ -289,5 +286,14 @@ public class OrderUtils {
         price.setTotalPrice(misc.getSalePrice().setScale(2, RoundingMode.HALF_UP));
         price.setTotalShipping(misc.getShippingChargeExVat().setScale(2, RoundingMode.HALF_UP));
         return price;
+    }
+
+    public static GreetingCardMessage fetchGreetingCardMsg(GreetingCardEntity greetingCard) {
+        GreetingCardMessage greetingCardMessage = new GreetingCardMessage();
+        greetingCardMessage.setGiftMessage(greetingCard.getGreetingCardMsg());
+        greetingCardMessage.setRecipientName(greetingCard.getReceiverName());
+        greetingCardMessage.setRecipientFirstName(greetingCard.getReceiverFirstName());
+        greetingCardMessage.setRecipientLastName(greetingCard.getReceiverLastName());
+        return greetingCardMessage;
     }
 }

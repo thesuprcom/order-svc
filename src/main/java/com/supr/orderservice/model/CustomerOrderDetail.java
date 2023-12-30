@@ -19,6 +19,7 @@ public class CustomerOrderDetail implements Serializable {
     private String orderPlacedDate;
     private String receiverName;
     private GreetingCard greetingCard;
+    private GreetingCardMessage greetingCardMessage;
     private String invoiceLink;
     private BigDecimal totalAmount;
     private Address shippingAddress;
@@ -33,6 +34,7 @@ public class CustomerOrderDetail implements Serializable {
         response.setOrderPlacedDate(order.createdAt.toString());
         response.setReceiverName(order.getReceiver().getFirstName()+" "+order.getReceiver().getLastName());
         response.setGreetingCard(OrderUtils.fetchGreetingCard(order.getGreetingCard()));
+        response.setGreetingCardMessage(OrderUtils.fetchGreetingCardMsg(order.getGreetingCard()));
         response.setInvoiceLink(order.getInvoiceDocumentId());
         response.setShippingAddress(order.getShippingAddress());
         response.setCouponDetails(order.getCouponDetails());

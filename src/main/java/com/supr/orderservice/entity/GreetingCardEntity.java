@@ -30,17 +30,16 @@ public class GreetingCardEntity extends BaseEntity{
 
     @Column(name = "greeting_card_code")
     private String greetingCardCode;
-    @Column(name = "greeting_card_name")
-    private String greetingCardName;
-
     @Column(name = "sender_name")
     private String senderName;
     @Column(name = "receiver_name")
     private String receiverName;
+    @Column(name = "receiver_first_name")
+    private String receiverFirstName;
+    @Column(name = "receiver_last_name")
+    private String receiverLastName;
     @Column(name = "greeting_card_occasion")
     private String greetingCardOccasion;
-    @Column(name = "greeting_card_image_url")
-    private String greetingCardImageUrl;
     @Column(name = "greeting_card_msg")
     private String greetingCardMsg;
     @Type(type = "json")
@@ -49,10 +48,6 @@ public class GreetingCardEntity extends BaseEntity{
     @Enumerated(EnumType.STRING)
     @Column(name = "greeting_card_status")
     private GreetingCardStatus greetingCardStatus;
-
-    @Type(type = "json")
-    @Column(name = "greeting_envelop_url",columnDefinition = "json")
-    private ImageUrl greetingEnvelopUrl;
 
     @OneToOne
     @JoinColumn(name = "order_id")

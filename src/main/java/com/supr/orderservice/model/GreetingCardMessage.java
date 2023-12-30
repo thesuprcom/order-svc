@@ -12,6 +12,7 @@ import java.io.Serializable;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class GreetingCardMessage implements Serializable {
+    private String recipientName;
     private String recipientFirstName;
     private String recipientLastName;
     private String giftMessage;
