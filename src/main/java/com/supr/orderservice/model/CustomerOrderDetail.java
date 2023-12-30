@@ -1,5 +1,8 @@
 package com.supr.orderservice.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.supr.orderservice.entity.OrderEntity;
 import com.supr.orderservice.utils.OrderUtils;
 import lombok.Data;
@@ -11,6 +14,8 @@ import java.util.List;
 
 @Data
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonNaming(PropertyNamingStrategy.SnakeCaseStrategy.class)
 public class CustomerOrderDetail implements Serializable {
     private List<ItemInfo> items;
     private String orderId;
