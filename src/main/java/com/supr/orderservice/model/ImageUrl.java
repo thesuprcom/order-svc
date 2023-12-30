@@ -13,6 +13,8 @@ import java.util.Map;
 public class ImageUrl {
     public int angle;
     public String dpi;
+
+    public String url;
     public int height;
     public String publicId;
     public String storagePath;
