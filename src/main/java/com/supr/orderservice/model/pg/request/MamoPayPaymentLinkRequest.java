@@ -2,6 +2,7 @@ package com.supr.orderservice.model.pg.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.supr.orderservice.model.pg.MamoPayRules;
@@ -25,6 +26,7 @@ public class MamoPayPaymentLinkRequest implements Serializable {
     private int processingFeePercentage;
     private double amount;
     private String amountCurrency;
+    @JsonProperty("is_widget")
     private boolean isWidget;
     private boolean enableTabby;
     private boolean enableMessage;
