@@ -19,8 +19,7 @@ public interface MamoPayServiceClient {
                                                  @RequestHeader("Authorization") String accessToken);
 
     @GetMapping(value = "/manage_api/v1/charges/{charge-id}")
-    MamoPayChargeDetailsResponse fetchChargeDetails(@PathVariable("change-id") String chargeId,
-                                                    @RequestHeader("Authorization") String accessToken);
+    MamoPayChargeDetailsResponse fetchChargeDetails(@PathVariable("charge-id") String chargeId);
 
     @PostMapping(value = "/manage_api/v1/charges", consumes = MediaType.APPLICATION_JSON_VALUE)
     MamoPayChargeDetailsResponse initiateSavedCardPayment(

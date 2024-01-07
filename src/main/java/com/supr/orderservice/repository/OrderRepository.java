@@ -47,6 +47,7 @@ public interface OrderRepository extends JpaRepository<OrderEntity, Long> {
     );
 
     OrderEntity findByOrderId(String orderId);
+    OrderEntity findByOrderIdAndUserId(String orderId, String userId);
 
     List<OrderEntity> findAllByStatusAndScheduledDate(ExternalStatus status, Timestamp date);
 

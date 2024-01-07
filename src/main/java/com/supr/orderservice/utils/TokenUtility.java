@@ -28,12 +28,12 @@ public class TokenUtility {
         return encryptValue(data, secretKey);
     }
 
-    public SecretKey generateSecretKey(String secretKeyString) {
+    public static SecretKey generateSecretKey(String secretKeyString) {
         byte[] keyBytes = secretKeyString.getBytes(StandardCharsets.UTF_8);
         return new SecretKeySpec(keyBytes, "AES");
     }
 
-    public String encryptValue(String value, SecretKey secretKey) throws Exception {
+    public static String encryptValue(String value, SecretKey secretKey) throws Exception {
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
         byte[] encryptedBytes = cipher.doFinal(value.getBytes(StandardCharsets.UTF_8));
@@ -46,4 +46,10 @@ public class TokenUtility {
         byte[] decryptedBytes = cipher.doFinal(Base64.getDecoder().decode(encryptedValue));
         return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
+
+//    public static void main(String[] args) throws Exception {
+//        String data = "SUPRLR2D2ETH1V"+"#"+"0bc431e7-1c4c-45ef-99a9-a006fe82cfe0";
+//        SecretKey secretKey = generateSecretKey("supr@5gKijKlmn$pqrstuvwxz_123456");
+//        System.out.println(encryptValue(data,secretKey));
+//    }
 }

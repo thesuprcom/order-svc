@@ -78,7 +78,7 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderEntity fetchSenderOrderWithStatus(String orderId) {
-        return receiverOrderRepository.findByOrderIdAndOrderTypeAndStatus(orderId, OrderType.SENDER,
+        return senderOrderRepository.findByOrderIdAndOrderTypeAndStatus(orderId, OrderType.SENDER,
                 OrderItemStatus.PAYMENT_LINK_CREATION_SUCCESS);
     }
 

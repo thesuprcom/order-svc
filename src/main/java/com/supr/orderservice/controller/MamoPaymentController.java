@@ -60,19 +60,21 @@ public class MamoPaymentController {
     }
 
     @GetMapping("success")
+    @SneakyThrows
     public void handlePaymentSuccess(@RequestParam("createdAt") String createAt,
                                      @RequestParam("chargeUID") String chargeUID,
                                      @RequestParam("paymentLinkId") String paymentLinkId,
                                      @RequestParam("status") String status,
                                      @RequestParam("token") String token,
-                                     @RequestParam("user_id") String userId,
-                                     @RequestParam("order_id") String orderId,
                                      @RequestParam("user_type") String userType,
                                      @RequestParam("transactionId") String transactionId) {
-        log.info("Request from mamopay for payment failure for order: {} with pgOrderId: {} for orderType: {} with " +
+        String decryptedValue = tokenUtility.decryptValue(token, TokenUtility.generateSecretKey(secretKey));
+        String orderId = decryptedValue.split("#")[0].trim();
+        String userId = decryptedValue.split("#")[1].trim();
+        log.info("Request from mamopay for payment success for order: {} with pgOrderId: {} for orderType: {} with " +
                 "pgStatus : {}", orderId, paymentLinkId, userType, status);
-        MamoPayChargeDetailsResponse response = mamoPayServiceClient.fetchChargeDetails(chargeUID, mamoPayAccessToken);
-        OrderEntity order = validateRequest(token, paymentLinkId, orderId, userId, userType);
+        MamoPayChargeDetailsResponse response = mamoPayServiceClient.fetchChargeDetails(chargeUID);
+        OrderEntity order = validateRequest(token, paymentLinkId, userId, userType);
         if (userType.equalsIgnoreCase(OrderType.SENDER.name())) {
             switch (order.getGiftSentOption()) {
                 case EMAIL -> giftSendModeUtility.sendEmailForGift(order);
@@ -95,19 +97,21 @@ public class MamoPaymentController {
     }
 
     @GetMapping("failed")
+    @SneakyThrows
     public void handlePaymentFailure(@RequestParam("createdAt") String createAt,
                                      @RequestParam("chargeUID") String chargeUID,
                                      @RequestParam("paymentLinkId") String paymentLinkId,
                                      @RequestParam("status") String status,
                                      @RequestParam("token") String token,
-                                     @RequestParam("user_id") String userId,
-                                     @RequestParam("order_id") String orderId,
                                      @RequestParam("user_type") String userType,
                                      @RequestParam("transactionId") String transactionId) {
+        String decryptedValue = tokenUtility.decryptValue(token, TokenUtility.generateSecretKey(secretKey));
+        String orderId = decryptedValue.split("#")[0].trim();
+        String userId = decryptedValue.split("#")[1].trim();
         log.info("Request from mamopay for payment failure for order: {} with pgOrderId: {} for orderType: {} with " +
                 "pgStatus : {}", orderId, paymentLinkId, userType, status);
-        MamoPayChargeDetailsResponse response = mamoPayServiceClient.fetchChargeDetails(chargeUID, mamoPayAccessToken);
-        OrderEntity order = validateRequest(token, paymentLinkId, orderId, userId, userType);
+        MamoPayChargeDetailsResponse response = mamoPayServiceClient.fetchChargeDetails(chargeUID);
+        OrderEntity order = validateRequest(paymentLinkId, orderId, userId, userType);
         createCardDetails(response, order);
         TransactionEntity transaction = order.getTransaction();
         transaction.setTransactionId(transactionId);
@@ -146,8 +150,8 @@ public class MamoPaymentController {
     }
 
     @SneakyThrows
-    private OrderEntity validateRequest(String token, String paymentLinkId, String orderId, String userId, String userType) {
-        String decryptedValue = tokenUtility.decryptValue(token, tokenUtility.generateSecretKey(secretKey));
+    private OrderEntity validateRequest(String paymentLinkId, String orderId, String userId, String userType) {
+
         OrderEntity order;
         if (userType.equalsIgnoreCase(OrderType.SENDER.name())) {
             order = orderService.fetchSenderOrderWithStatus(orderId);
@@ -157,11 +161,7 @@ public class MamoPaymentController {
         if (order == null) {
             throw new OrderServiceException("Invalid request");
         }
-        String decOrderId = decryptedValue.split("#")[0];
-        String decUserId = decryptedValue.split("#")[1];
-        if (!userId.equalsIgnoreCase(decUserId) && !decUserId.equalsIgnoreCase(order.getUserId())
-                && !decOrderId.equalsIgnoreCase(orderId) && !decOrderId.equalsIgnoreCase(order.getOrderId())
-                && !paymentLinkId.equalsIgnoreCase(order.getTransaction().getPgOrderIdentifier())) {
+        if (!paymentLinkId.equalsIgnoreCase(order.getTransaction().getPgOrderIdentifier())) {
             throw new OrderServiceException("Invalid token into the request!!");
         }
         return order;
