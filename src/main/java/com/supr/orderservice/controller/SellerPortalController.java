@@ -1,5 +1,6 @@
 package com.supr.orderservice.controller;
 
+import com.supr.orderservice.model.request.CancelOrderRequest;
 import com.supr.orderservice.model.request.PortalUpdateOrderRequest;
 import com.supr.orderservice.model.request.SearchOrderRequest;
 import com.supr.orderservice.model.request.StatusChangeRequest;
@@ -58,6 +59,12 @@ public class SellerPortalController {
     @PutMapping("/mark-shipped")
     public ResponseEntity markOrderShip(@RequestBody StatusChangeRequest request) {
         return new ResponseEntity(sellerPortalService.markOrderShipped(request), HttpStatus.OK);
+    }
+
+    @PutMapping("/cancel/{order-id")
+    public ResponseEntity cancelOrder(@Valid @RequestBody CancelOrderRequest cancelOrderRequest) {
+        sellerPortalService.cancelOrder(cancelOrderRequest);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/status-updates/{order-id}/{seller-id}/{brand-code}")

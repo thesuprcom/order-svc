@@ -6,6 +6,8 @@ import com.supr.orderservice.entity.OrderItemStatusHistoryEntity;
 import com.supr.orderservice.enums.EntityTypeEnum;
 import com.supr.orderservice.enums.ExternalStatus;
 import com.supr.orderservice.enums.OrderChangeEvent;
+import com.supr.orderservice.enums.OrderItemStatus;
+import com.supr.orderservice.enums.OrderType;
 import com.supr.orderservice.exception.OrderServiceException;
 import com.supr.orderservice.model.ItemChangeDto;
 import com.supr.orderservice.model.ItemStatusChange;
@@ -14,6 +16,7 @@ import com.supr.orderservice.model.OrderPrice;
 import com.supr.orderservice.model.PortalOrderDetail;
 import com.supr.orderservice.model.TrackingInfo;
 import com.supr.orderservice.model.UserInfo;
+import com.supr.orderservice.model.request.CancelOrderRequest;
 import com.supr.orderservice.model.request.PortalUpdateOrderRequest;
 import com.supr.orderservice.model.request.SearchOrderRequest;
 import com.supr.orderservice.model.request.StatusChangeRequest;
@@ -25,8 +28,10 @@ import com.supr.orderservice.model.response.PortalUpdateOrderResponse;
 import com.supr.orderservice.repository.OrderItemRepository;
 import com.supr.orderservice.repository.OrderItemStatusHistoryRepository;
 import com.supr.orderservice.repository.OrderRepository;
+import com.supr.orderservice.service.OrderService;
 import com.supr.orderservice.service.SellerPortalService;
 import com.supr.orderservice.service.StateMachineManager;
+import com.supr.orderservice.service.WalletService;
 import com.supr.orderservice.utils.ApplicationUtils;
 import com.supr.orderservice.utils.OrderUtils;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +49,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -53,6 +59,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SellerPortalServiceImpl implements SellerPortalService {
     private final OrderRepository orderRepository;
+    private final OrderService orderService;
+    private final WalletService walletService;
     private final OrderItemRepository orderItemRepository;
     private final StateMachineManager stateMachineManager;
     private final OrderItemStatusHistoryRepository orderItemStatusHistoryRepository;
@@ -291,6 +299,43 @@ public class SellerPortalServiceImpl implements SellerPortalService {
             return response;
         }
         return new PortalOrderSearchResponse(Collections.emptyList());
+    }
+
+    @Override
+    public void cancelOrder(CancelOrderRequest cancelOrderRequest) {
+        OrderEntity order = orderRepository.findByOrderId(cancelOrderRequest.getOrderId());
+        Set<ExternalStatus> externalStatuses = ApplicationUtils.getSellerPortalOrderCancellationStatus();
+        if (order == null || !externalStatuses.contains(order.getExternalStatus())) {
+            throw new OrderServiceException("Cannot cancel the order");
+        }
+        final BigDecimal[] refundAmount = {BigDecimal.ZERO};
+
+        Map<String, OrderItemEntity> orderItemEntityMap = order.getOrderItemEntities().stream()
+                .collect(Collectors.toMap(OrderItemEntity::getChildOrderId, Function.identity()));
+        cancelOrderRequest.getOrderCancelItemList().forEach(orderCancelItem -> {
+            if (orderItemEntityMap.containsKey(orderCancelItem.getItemOrderId())) {
+                OrderItemEntity orderItemEntity = orderItemEntityMap.get(orderCancelItem.getItemOrderId());
+                if (externalStatuses.contains(orderItemEntity.getExternalStatus())) {
+                    refundAmount[0] = refundAmount[0].add(orderItemEntity.getTotalPrice());
+                    orderItemEntity.setExternalStatus(ExternalStatus.CANCELLED_BY_SELLER);
+                    orderItemEntity.setStatus(OrderItemStatus.CANCELLED_BY_SELLER);
+                    orderItemEntity.setReason(orderCancelItem.getReason());
+                    orderItemRepository.save(orderItemEntity);
+                }
+            }
+        });
+        if(cancelOrderRequest.getOrderCancelItemList().size() == order.getOrderItemEntities().size()){
+            order.setExternalStatus(ExternalStatus.CANCELLED_BY_SELLER);
+            order.setStatus(OrderItemStatus.CANCELLED_BY_SELLER);
+        }else{
+            order.setExternalStatus(ExternalStatus.PARTIALLY_CANCELLED);
+            order.setStatus(OrderItemStatus.PARTIALLY_CANCELLED);
+        }
+        order = orderService.save(order);
+        log.info("Calling wallet service for the user :{} to refund amount in wallet for order-id:{}",
+                order.getUserId(), order.getOrderId() );
+        walletService.processRefund(order.getSender(),refundAmount[0], order);
+
     }
 
 }

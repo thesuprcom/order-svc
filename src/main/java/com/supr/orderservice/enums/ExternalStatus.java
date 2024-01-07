@@ -15,6 +15,7 @@ public enum ExternalStatus {
     PARTIALLY_SHIPPED("Partially Shipped"),
     DELIVERED("Delivered"),
     PARTIALLY_DELIVERED("Partially Delivered"),
+    PARTIALLY_CANCELLED("Partially Cancelled"),
     GIFT_UNDELIVERED("Gift Undelivered"),
     PAYMENT_FAILED("Payment Failed"),
     CANCELLED("Cancelled"),

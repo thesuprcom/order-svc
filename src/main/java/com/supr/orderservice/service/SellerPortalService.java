@@ -1,5 +1,6 @@
 package com.supr.orderservice.service;
 
+import com.supr.orderservice.model.request.CancelOrderRequest;
 import com.supr.orderservice.model.request.PortalUpdateOrderRequest;
 import com.supr.orderservice.model.request.SearchOrderRequest;
 import com.supr.orderservice.model.request.StatusChangeRequest;
@@ -24,4 +25,5 @@ public interface SellerPortalService {
 
     PortalOrderSearchResponse searchOrder(SearchOrderRequest searchOrderRequest);
 
+    void cancelOrder(CancelOrderRequest cancelOrderRequest);
 }

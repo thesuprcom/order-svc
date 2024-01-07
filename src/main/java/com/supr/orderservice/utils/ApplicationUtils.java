@@ -46,6 +46,13 @@ public class ApplicationUtils {
                         ExternalStatus.CANCELLED, ExternalStatus.GIFT_ACCEPTED);
     }
 
+    public static Set<ExternalStatus> getSellerPortalOrderCancellationStatus() {
+        return new HashSet(Arrays
+                .asList(ExternalStatus.GIFT_CREATED, ExternalStatus.GIFT_ACCEPTED,
+                        ExternalStatus.PARTIALLY_SHIPPED, ExternalStatus.PARTIALLY_DELIVERED,
+                        ExternalStatus.PARTIALLY_CANCELLED));
+    }
+
     public static List<ExternalStatus> getUserOrderHistoryExternalStatus() {
         return Arrays.asList(ExternalStatus.GIFT_CREATED, ExternalStatus.GIFT_SWAPPED);
     }

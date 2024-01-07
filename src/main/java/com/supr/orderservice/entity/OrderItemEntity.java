@@ -66,6 +66,7 @@ public class OrderItemEntity extends OrderBaseEntity{
     private String productColour;
     private String productFullTitle;
     private String productBrand;
+    private String reason;
     @Type(type = "json")
     @Column(columnDefinition = "json")
     private List<ImageUrl> images;
