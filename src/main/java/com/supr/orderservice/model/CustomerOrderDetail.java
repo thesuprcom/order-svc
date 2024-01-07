@@ -28,6 +28,7 @@ public class CustomerOrderDetail implements Serializable {
     private String invoiceLink;
     private BigDecimal totalAmount;
     private Address shippingAddress;
+    private String invitationLink;
     private CouponDetails couponDetails;
 
     public CustomerOrderDetail customerOrderDetail(OrderEntity order){
@@ -43,6 +44,7 @@ public class CustomerOrderDetail implements Serializable {
         response.setInvoiceLink(order.getInvoiceDocumentId());
         response.setShippingAddress(order.getShippingAddress());
         response.setCouponDetails(order.getCouponDetails());
+        response.setInvitationLink(order.getInvitationLink());
         return response;
     }
 }

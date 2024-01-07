@@ -206,8 +206,6 @@ public class PaymentGatewayServiceImpl implements PaymentGatewayService {
         request.setExternalId(order.getOrderId());
         HashMap<String, String> customerData = new HashMap<>();
         customerData.put("user_type", order.getOrderType().name());
-        customerData.put("user_id", order.getUserId());
-        customerData.put("order_id", order.getOrderId());
         customerData.put("token", tokenUtility.createTokenForPayment(order));
         request.setCustomData(customerData);
         request.setCapacity(1);
